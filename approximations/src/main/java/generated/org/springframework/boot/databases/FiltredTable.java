@@ -124,4 +124,10 @@ public class FiltredTable<T> implements ITable<T> {
                 filter
         );
     }
+
+    public T firstEnsure() {
+
+        Engine.assume(size > 0);
+        return getEnsure(0);
+    }
 }

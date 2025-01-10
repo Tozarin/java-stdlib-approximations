@@ -250,6 +250,7 @@ public class ListWrapper<T> implements List<T> {
 
     @NotNull
     @Override
+    @SuppressWarnings("unchecked")
     public <T1> T1[] toArray(@NotNull T1[] a) {
 
         Class<?> genericType = a.getClass().componentType();
@@ -629,7 +630,7 @@ public class ListWrapper<T> implements List<T> {
         int newTblStartIx = startDif < 0 ? tblStartIx + startDif : tblStartIx;
         int newTblEndIx = endDif < 0 ? tblEndIx : tblEndIx - endDif;
 
-        return new ListWrapper(
+        return new ListWrapper<>(
                 table.clone(),
                 newTblStartIx,
                 newTblEndIx,

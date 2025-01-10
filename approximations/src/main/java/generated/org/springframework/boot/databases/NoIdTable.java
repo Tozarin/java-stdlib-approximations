@@ -1,30 +1,18 @@
 package generated.org.springframework.boot.databases;
 
 import org.usvm.api.Engine;
-import org.usvm.api.SymbolicMap;
 
-// V --- type of id field
-public class BaseTable<V> implements ITable<Object[]> {
+public class NoIdTable implements ITable<Object[]> {
 
-    //      row0  row2  --  rowN
-    //  col0
-    //  col1
-    //   --
-    //  colM
     public Object[][] data;
     public int size;
 
-    public SymbolicMap<V, Integer> ids;
-
     public int columnCount;
-    public int idIndex;
 
-    public BaseTable(
-            int idIndex,
-            Class<?>... columnTypes) {
+    public NoIdTable(Class<?>... columnTypes) {
 
         this.columnCount = columnTypes.length;
-        this.idIndex = idIndex;
+
         this.size = Engine.makeSymbolicInt();
         Engine.assume(size > -1);
 
@@ -34,24 +22,16 @@ public class BaseTable<V> implements ITable<Object[]> {
             data[i] = Engine.makeSymbolicArray(columnTypes[i], size);
             Engine.assume(data[i] != null);
         }
-
-        this.ids = Engine.makeSymbolicMap();
-        Engine.assume(ids != null);
-        Engine.assume(ids.size() == size);
     }
 
-    public BaseTable(
+    public NoIdTable(
             Object[][] data,
             int size,
-            SymbolicMap<V, Integer> ids,
-            int columnCount,
-            int idIndex
+            int columnCount
     ) {
         this.data = data;
         this.size = size;
-        this.ids = ids;
         this.columnCount = columnCount;
-        this.idIndex = idIndex;
     }
 
     @Override
@@ -70,28 +50,32 @@ public class BaseTable<V> implements ITable<Object[]> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Object[] getEnsure(int ix) {
 
         Engine.assume(ix < size());
-        Object[] row = getRow(ix);
-        V id = (V) row[idIndex];
-        Engine.assume(ids.containsKey(id));
-        Engine.assume(ids.get(id) == ix);
+        return getRow(ix);
+    }
 
-        return row;
+    public boolean rowEqual(Object[] l, Object[] r) {
+
+        for (int i = 0; i < columnCount; i++) {
+            if (l[i] != r[i] || !l[i].equals(r[i])) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public int indexIn(Object[] row, int startIx, int endIx) {
 
-        V id = (V) row[idIndex];
-        if (ids.containsKey(id)) {
-            int ix = ids.get(id);
-            Engine.assume(ix < size());
-            Engine.assume(data[idIndex][ix] == id);
-            if (startIx <= ix && ix < endIx) return ix;
+        for (int i = startIx; i < endIx; i++) {
+
+            Object[] candidate = getRow(i);
+            if (rowEqual(row, candidate)) {
+                return i;
+            }
         }
 
         return -1;
@@ -109,12 +93,10 @@ public class BaseTable<V> implements ITable<Object[]> {
 
     @Override
     public ITable<Object[]> clone() {
-        return new BaseTable<>(
+        return new NoIdTable(
                 data,
                 size,
-                ids,
-                columnCount,
-                idIndex
+                columnCount
         );
     }
 }

@@ -6,42 +6,28 @@ public class SecondDataClass {
 
     private Integer id;
 
-    // genered
-    public static Integer _getId(Object[] row) {
-        return (Integer) row[0];
+    // generated
+    public Integer _getId() {
+        return id;
     }
 
     private List<FirstDataClass> subclasses;
 
     private Integer subclasses_id;
 
-    public SecondDataClass(Object[] row, ASpringJPATable subclassesCondition) {
+    public SecondDataClass(Object[] row, ITable<FirstDataClass> subclassesCondition) {
         this.id = (Integer) row[0];
         this.subclasses_id = (Integer) row[1];
 
-        this.subclasses = subclassesCondition.stream()
-                .filter(this::_subclassesFilter)
-                .map(this::_subclassesMapper)
-                .toList();
-    }
-
-    public Boolean _subclassesFilter(Object[] row) {
-        return FirstDataClass._getId(row) == subclasses_id;
-    }
-
-    public FirstDataClass _subclassesMapper(Object[] row) {
-        return new FirstDataClass(
-                row,
-                SpringDatabases._blanck, // no condition
-                SpringDatabases._blanck,
-                SpringDatabases._blanck,
-                SpringDatabases._blanck,
-                SpringDatabases._blanck
+        this.subclasses = new ListWrapper<>(
+                new FiltredTable<>(
+                        subclassesCondition,
+                        this::_subclassesFilter
+                )
         );
     }
 
-    // filter to FirstDataClass oneToManyAddTable field
-    public Boolean _firstDataClassOneToManyAddTableFilter(Object[] row) {
-        return row[1] == id;
+    public Boolean _subclassesFilter(FirstDataClass subclass) {
+        return subclass._getId() == subclasses_id;
     }
 }

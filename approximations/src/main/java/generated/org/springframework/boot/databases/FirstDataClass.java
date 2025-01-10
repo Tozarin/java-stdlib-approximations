@@ -1,16 +1,15 @@
 package generated.org.springframework.boot.databases;
 
 import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Stream;
+import java.util.Set;
 
 public class FirstDataClass {
 
     private Integer id; // id field
 
-    // genered
-    public static Integer _getId(Object[] row) {
-        return (Integer) row[0];
+    // generated
+    public Integer _getId() {
+        return id;
     }
 
     private SecondDataClass oneToOne; // via additional field 'oneToOne_id'
@@ -23,79 +22,114 @@ public class FirstDataClass {
 
     private Integer oneToOne_id; // generated fields
     private Integer oneToMany_id;
-    private Integer manyToMany_id;
+    private Set<Integer> oneToManySet; // ids for oneToMany from join table
+    private Integer manyToOne_id;
+    private Set<Integer> manyToManySet;
 
     public FirstDataClass(
             Object[] row, // row from 'FirstDataClassTable' that sorted by fields name
-            ASpringJPATable oneToOneCondition, // conditions from queries to subclasses
-            ASpringJPATable oneToManyCondition,
-            ASpringJPATable oneToManyAddTableCondition,
-            ASpringJPATable manyToOneCondition,
-            ASpringJPATable manyToManyCondition
+
+            // conditions from queries to subclasses.
+            // fully correct initialized objects for which all fields were filled in at previous stages
+            ITable<SecondDataClass> oneToOneCondition,
+            ITable<SecondDataClass> oneToManyCondition,
+            ITable<SecondDataClass> oneToManyAddTableCondition,
+            ITable<SecondDataClass> manyToOneCondition,
+            ITable<SecondDataClass> manyToManyCondition
     ) {
         this.id = (Integer) row[0];
-        this.manyToMany_id = (Integer) row[1];
+        this.manyToOne_id = (Integer) row[1];
         this.oneToMany_id = (Integer) row[2];
         this.oneToOne_id = (Integer) row[3];
 
-        this.oneToOne = new SecondDataClass(
-                oneToOneCondition.stream()
-                    .filter(this::_oneToOneFilter)
-                    .findFirst()
-                    .orElseThrow(),
-                SpringDatabases._blanck
+        this.oneToOne = new FiltredTable<>(oneToOneCondition, this::_oneToOneFilter)
+                .firstEnsure();
+
+        this.oneToMany = new ListWrapper<>(
+                new FiltredTable<>(
+                        oneToManyCondition,
+                        this::_oneToManyFilter
+                )
         );
 
-        this.oneToMany = oneToManyCondition.stream()
-                .filter(this::_oneToManyFilter)
-                .map(this::_oneToManyMapper)
-                .toList(); // TODO: not lazy??
-
-        Stream<Object[]> _oneToManyAddTableBetween = SpringDatabases._blanck.stream()
-                .filter(this::_oneToManyAddTableBetweenFilter);
-
-        this.oneToManyAddTable = oneToManyAddTableCondition.stream()
-                .flatMap(r -> {
-
-                            SecondDataClass rr = new SecondDataClass(r, SpringDatabases._blanck);
-
-                            return _oneToManyAddTableBetween
-                                    .filter(rr::_firstDataClassOneToManyAddTableFilter)
-                                    .map(x -> rr)
-                                    .distinct();
-                        }
+        this.oneToManySet = new SetWrapper<>(
+                new MappedTable<>(
+                        new FiltredTable<>(
+                                SpringDatabases._blanckAdd,
+                                this::_oneToManyAddTableBetweenFilter
+                        ),
+                        this::_oneToManyAddTableFilter,
+                        Integer.class
                 )
-                .toList();
+        );
 
-        /*this.joinedParents = joinedParents.stream()
-                .filter((r) -> SpringDatabases._blanck.stream() // table between childs and parents
-                        .anyMatch((jr) -> jr[0] == r[0] && jr[1] == row[5]))
-                .map((r) -> new SecondDataClass(r, SpringDatabases._blanck))
-                .toList();*/
+        this.oneToManyAddTable = new ListWrapper<>(
+                new FiltredTable<>(
+                        oneToManyAddTableCondition,
+                        this::_oneToManyAddTableFilter
+                )
+        );
+
+        this.manyToOne = new FiltredTable<>(manyToOneCondition, this::_manyToOneFilter)
+                .firstEnsure();
+
+        this.manyToManySet = new SetWrapper<>(
+                new MappedTable<>(
+                        new FiltredTable<>(
+                                SpringDatabases._blanckAdd,
+                                this::_manyToManyAddTableBetweenFilter
+                        ),
+                        this::_manyToManyAddTableFilter,
+                        Integer.class
+                )
+        );
+
+        this.manyToMany = new ListWrapper<>(
+                new FiltredTable<>(
+                        manyToManyCondition,
+                        this::_manyToManyAddTableFilter
+                )
+        );
     }
 
-    public Boolean _oneToOneFilter(Object[] row) {
-        return SecondDataClass._getId(row) == oneToOne_id;
+    public Boolean _oneToOneFilter(SecondDataClass subclass) {
+        return subclass._getId() == oneToOne_id;
     }
 
-    public Boolean _oneToManyFilter(Object[] row) {
-        return SecondDataClass._getId(row) == oneToMany_id;
-    }
-
-    public SecondDataClass _oneToManyMapper(Object[] row) {
-        return new SecondDataClass(row, SpringDatabases._blanck);
+    public Boolean _oneToManyFilter(SecondDataClass subclass) {
+        return subclass._getId() == oneToMany_id;
     }
 
     public Boolean _oneToManyAddTableBetweenFilter(Object[] row) {
         return row[0] == id; // rows in between table that linked with this
     }
 
-    public Stream<SecondDataClass> _oneToManyAddTableFlatMap(Object[] row) {
-        SecondDataClass dataClass = new SecondDataClass(r, SpringDatabases._blanck);
+    // mapper to FirstDataClass oneToManyAddTable field
+    //
+    //  _additional table for join_
+    // |  fdcId  |  ..  |  sdcId  | -> sdcId
+    // |________|______|__________|
+    public Integer _oneToManyAddTableFilter(Object[] row) {
+        return (Integer) row[1];
+    }
 
-        return _oneToManyAddTableBetween
-                .filter(rr::_firstDataClassOneToManyAddTableFilter)
-                .map(x -> rr)
-                .distinct();
+    public Boolean _oneToManyAddTableFilter(SecondDataClass subclass) {
+        return oneToManySet.contains(subclass._getId());
+    }
+
+    public Boolean _manyToOneFilter(SecondDataClass subclass) {
+        return subclass._getId() == manyToOne_id;
+    }
+
+    public Boolean _manyToManyAddTableBetweenFilter(Object[] row) {
+        return row[0] == id;
+    }
+
+    public Integer _manyToManyAddTableFilter(Object[] row) {
+        return (Integer) row[1];
+    }
+
+    public Boolean _manyToManyAddTableFilter(SecondDataClass subclass) {
+        return manyToManySet.contains(subclass._getId());
     }
 }
