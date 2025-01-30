@@ -2,107 +2,116 @@ package generated.org.springframework.boot.databases;
 
 import org.usvm.api.Engine;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Predicate;
 
 public class FiltredTable<T> implements ITable<T> {
 
     public ITable<T> table;
+    public int sizeOfTbl;
     public int size;
-    public int[] indexMap;
+
+    // subtableIx -> thisIx
+    // to prevent situations like this:
+    // this.get(3) -> return table.get(5) because 3, 4 are bad
+    // this.get(5) will return table.get(5), but 5 != 3 !!
+    //
+    // to counter this here we note that 3 -> 5 and will use it in check
+    public Integer[] mapper;
 
     Predicate<T> filter;
 
     public FiltredTable(ITable<T> table, Predicate<T> filter) {
-
         this.table = table;
+        this.sizeOfTbl = table.size();
         this.size = Engine.makeSymbolicInt();
-        Engine.assume(-1 < size);
-        Engine.assume(size <= table.size());
+        Engine.assume(size > -1);
+        Engine.assume(size <= sizeOfTbl);
 
-        this.indexMap = Engine.makeSymbolicIntArray(size);
-        Engine.assume(indexMap != null);
+        this.mapper = new Integer[sizeOfTbl];
 
         this.filter = filter;
     }
 
     public FiltredTable(
             ITable<T> table,
+            int sizeOfTbl,
             int size,
-            int[] indexMap,
+            Integer[] mapper,
             Predicate<T> filter
     ) {
         this.table = table;
+        this.sizeOfTbl = sizeOfTbl;
         this.size = size;
-        this.indexMap = indexMap;
+        this.mapper = mapper;
         this.filter = filter;
     }
 
-    public int mapIndexEnsure(int ix) {
-
-        int mappedIx = indexMap[ix];
-        Engine.assume(-1 < mappedIx);
-        Engine.assume(mappedIx < table.size());
-
-        if (mappedIx == 0) Engine.assume(ix == 0);
-        if (mappedIx == size - 1) Engine.assume(ix == size - 1);
-
-        if (ix != 0) Engine.assume(indexMap[ix - 1] < mappedIx);
-        if (ix != table.size() - 1) Engine.assume(mappedIx < indexMap[ix + 1]);
-
-        return mappedIx;
-    }
-
-
-    // Because it is aggregate operation,
-    // and we want to be sure that original table
-    // contains size 'good' rows and table.size() - size 'bad' ones
     @Override
     public int size() {
-
-        int ix = 0;
-        for (int i = 0; i < table.size(); i++) {
-
-            T t = table.getEnsure(i);
-
-            if (ix == size || indexMap[ix] != i) {
-                Engine.assume(!filter.test(t));
-            }
-            else {
-                ix++;
-                Engine.assume(filter.test(t));
-            }
-        }
-
         return size;
     }
 
     @Override
     public T getEnsure(int ix) {
 
-        int origIx = mapIndexEnsure(ix);
-        T t = table.getEnsure(origIx);
-        Engine.assume(filter.test(t));
+        Engine.assume(ix < size);
 
+        // ix < mapper[i] forall i >= ix // invariant
+        // see info about other indexes
+        // mapper[i] == null means hz about table.getEnsure(i)
+        int i = ix;
+        while(mapper[i] == null && i < sizeOfTbl) { i++; }
+
+        // we can choose any index from ix to sizeOfTable
+        // but we must leave space for elements from ix to size
+        if (i == sizeOfTbl) {
+            int newIx = Engine.makeSymbolicInt(); // "any index"
+            Engine.assume(ix <= newIx); // lower border
+            Engine.assume(newIx < sizeOfTbl - size + ix); // space to higher indexes
+            T t = table.getEnsure(newIx);
+            mapper[newIx] = ix; // note index
+            Engine.assume(filter.test(t));
+            return t;
+        }
+
+        // found self -> can just return
+        if (mapper[i] == ix) return table.getEnsure(i);
+
+        // found one of lower indexes
+        // need to skip all them all to find self
+        int toSkip = ix - mapper[i] - 1;
+        int ii = i + 1;
+        while(toSkip != -1 && ii < sizeOfTbl) {
+            if (mapper[ii] != null) toSkip--;
+            ii++;
+        }
+
+        // fond self
+        if (toSkip == -1) {
+            assert(ix == mapper[ii - 1]);
+            return table.getEnsure(ii - 1);
+        }
+
+        // like last time
+        assert(ii == sizeOfTbl);
+        int newIx = Engine.makeSymbolicInt();
+        Engine.assume(i + 1 <= newIx);
+        Engine.assume(newIx < sizeOfTbl - toSkip);
+        T t = table.getEnsure(newIx);
+        mapper[newIx] = ix;
+        Engine.assume(filter.test(t));
         return t;
     }
 
     @Override
     public int indexIn(T t, int startIx, int endIx) {
-
-        Engine.assume(filter.test(t));
-
-        int origStrIx = mapIndexEnsure(startIx);
-        int origEndIx = mapIndexEnsure(endIx);
-        int origIx = table.indexIn(t, origStrIx, origEndIx);
-
-        if (origIx == -1) return -1;
-
-        int ix = Engine.makeSymbolicInt();
-        Engine.assume(startIx <= ix);
-        Engine.assume(ix < endIx);
-        Engine.assume(mapIndexEnsure(ix) == origIx);
-
-        return ix;
+        for (int i = startIx; i < endIx; i++) {
+            T tt = getEnsure(i);
+            if (t == tt || t.equals(tt)) { return i; }
+        }
+        return -1;
     }
 
     @Override
@@ -119,14 +128,14 @@ public class FiltredTable<T> implements ITable<T> {
     public ITable<T> clone() {
         return new FiltredTable<>(
                 table.clone(),
+                sizeOfTbl,
                 size,
-                indexMap,
+                mapper,
                 filter
         );
     }
 
     public T firstEnsure() {
-
         Engine.assume(size > 0);
         return getEnsure(0);
     }

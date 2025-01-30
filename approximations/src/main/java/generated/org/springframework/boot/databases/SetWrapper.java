@@ -1,7 +1,5 @@
 package generated.org.springframework.boot.databases;
 
-import org.usvm.api.Engine;
-
 import java.lang.reflect.Array;
 import java.util.*;
 
