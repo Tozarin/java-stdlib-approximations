@@ -21,15 +21,17 @@ public class SortedTable<T> implements ITable<T> {
         this.limit = limit;
         this.offset = offset;
 
+        int tblSize = table.size();
+
         if (limit == -1) {
-            this.size = table.size() - offset;
+            this.size = tblSize - offset;
         }
         else {
-            this.size = Math.min(table.size() - offset, limit);
+            this.size = Math.min(tblSize - offset, limit);
         }
 
-        this.sorted = new Integer[table.size()];
-        this.backSorted = new Integer[table.size()];
+        this.sorted = new Integer[tblSize];
+        this.backSorted = new Integer[tblSize];
         Sort();
     }
 
@@ -95,7 +97,7 @@ public class SortedTable<T> implements ITable<T> {
 
     @Override
     public int size() {
-        return size; // mb aggregation
+        return size;
     }
 
     @Override

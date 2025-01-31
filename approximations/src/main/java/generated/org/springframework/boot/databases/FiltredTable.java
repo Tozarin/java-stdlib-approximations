@@ -55,7 +55,7 @@ public class FiltredTable<T> implements ITable<T> {
         // contains size "good" rows and table.size() - size "bad" ones
         // Just ensure mapping
         for (int i = 0; i < size; i++) { getEnsure(i); }
-        
+
         return size;
     }
 
