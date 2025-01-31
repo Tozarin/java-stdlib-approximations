@@ -37,6 +37,12 @@ public class DistinctTable<T> implements ITable<T> {
 
     @Override
     public int size() {
+        // Because it is aggregate operation
+        // and we want to be sure that original table
+        // contains size "good" rows and table.size() - size "bad" ones
+        // Just ensure mapping
+        for (int i = 0; i < size; i++) { getEnsure(i); }
+
         return size;
     }
 
