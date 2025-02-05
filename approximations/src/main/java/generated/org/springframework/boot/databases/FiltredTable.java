@@ -2,147 +2,125 @@ package generated.org.springframework.boot.databases;
 
 import org.usvm.api.Engine;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.function.Predicate;
 
 public class FiltredTable<T> implements ITable<T> {
 
     public ITable<T> table;
-    public int sizeOfTbl;
-    public int size;
+    public Predicate<T> filter;
 
-    // subtableIx -> thisIx
-    // to prevent situations like this:
-    // this.get(3) -> return table.get(5) because 3, 4 are bad
-    // this.get(5) will return table.get(5), but 5 != 3 !!
-    //
-    // to counter this here we note that 3 -> 5 and will use it in check
-    public Integer[] mapper;
-
-    Predicate<T> filter;
+    public List<T> cache;
+    public int cacheSize;
 
     public FiltredTable(ITable<T> table, Predicate<T> filter) {
         this.table = table;
-        this.sizeOfTbl = table.size();
-        this.size = Engine.makeSymbolicInt();
-        Engine.assume(size > -1);
-        Engine.assume(size <= sizeOfTbl);
-
-        this.mapper = new Integer[sizeOfTbl];
-
         this.filter = filter;
+
+        this.cache = new ArrayList<>();
+        this.cacheSize = -1;
     }
 
     public FiltredTable(
             ITable<T> table,
-            int sizeOfTbl,
-            int size,
-            Integer[] mapper,
-            Predicate<T> filter
+            Predicate<T> filter,
+            List<T> cache,
+            int cacheSize
     ) {
         this.table = table;
-        this.sizeOfTbl = sizeOfTbl;
-        this.size = size;
-        this.mapper = mapper;
         this.filter = filter;
+        this.cache = cache;
+        this.cacheSize = cacheSize;
     }
 
-    @Override
     public int size() {
-        // Because it is aggregate operation
-        // and we want to be sure that original table
-        // contains size "good" rows and table.size() - size "bad" ones
-        // Just ensure mapping
-        for (int i = 0; i < size; i++) { getEnsure(i); }
 
-        return size;
-    }
+        if (cacheSize != -1) return cacheSize;
 
-    @Override
-    public T getEnsure(int ix) {
-
-        Engine.assume(ix < size);
-
-        // ix < mapper[i] forall i >= ix // invariant
-        // see info about other indexes
-        // mapper[i] == null means hz about table.getEnsure(i)
-        int i = ix;
-        while(mapper[i] == null && i < sizeOfTbl) { i++; }
-
-        // we can choose any index from ix to sizeOfTable
-        // but we must leave space for elements from ix to size
-        if (i == sizeOfTbl) {
-            int newIx = Engine.makeSymbolicInt(); // "any index"
-            Engine.assume(ix <= newIx); // lower border
-            Engine.assume(newIx < sizeOfTbl - size + ix); // space to higher indexes
-            T t = table.getEnsure(newIx);
-            mapper[newIx] = ix; // note index
-            Engine.assume(filter.test(t));
-            return t;
+        Iterator<T> iter = iterator();
+        int count = 0;
+        while (iter.hasNext()) {
+            T candidate = iter.next();
+            if (filter.test(candidate)) {
+                count++;
+                cache.add(candidate);
+            }
         }
 
-        // found self -> can just return
-        if (mapper[i] == ix) return table.getEnsure(i);
-
-        // found one of lower indexes
-        // need to skip all them all to find self
-        int toSkip = ix - mapper[i] - 1;
-        int ii = i + 1;
-        while(toSkip != -1 && ii < sizeOfTbl) {
-            if (mapper[ii] != null) toSkip--;
-            ii++;
-        }
-
-        // fond self
-        if (toSkip == -1) {
-            assert(ix == mapper[ii - 1]);
-            return table.getEnsure(ii - 1);
-        }
-
-        // like last time
-        assert(ii == sizeOfTbl);
-        int newIx = Engine.makeSymbolicInt();
-        Engine.assume(i + 1 <= newIx);
-        Engine.assume(newIx < sizeOfTbl - toSkip);
-        T t = table.getEnsure(newIx);
-        mapper[newIx] = ix;
-        Engine.assume(filter.test(t));
-        return t;
+        cacheSize = count;
+        return cacheSize;
     }
 
-    @Override
-    public int indexIn(T t, int startIx, int endIx) {
-        for (int i = startIx; i < endIx; i++) {
-            T tt = getEnsure(i);
-            if (t == tt || t.equals(tt)) { return i; }
+    class FiltredIterator implements Iterator<T> {
+
+        Iterator<T> tblIter;
+        T curr;
+
+        public FiltredIterator() {
+            this.tblIter = table.clone().iterator();
+            this.curr = null;
         }
-        return -1;
+
+        public FiltredIterator(Iterator<T> tblIter) {
+            this.tblIter = tblIter;
+            this.curr = null;
+        }
+
+        @Override
+        public boolean hasNext() {
+
+            if (curr != null) return true;
+
+            while (tblIter.hasNext()) {
+                T candidate = tblIter.next();
+                if (filter.test(candidate)) {
+                    curr = candidate;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        @Override
+        public T next() {
+            if (!hasNext()) throw new NoSuchElementException();
+
+            T tmp = curr;
+            curr = null;
+
+            return tmp;
+        }
     }
 
-    @Override
-    public boolean containsIn(T t, int startIx, int endIx) {
-        return indexIn(t, startIx, endIx) != -1;
+    public Iterator<T> iterator() {
+        if (cacheSize != -1) return cache.iterator();
+        return new FiltredIterator();
     }
 
-    @Override
+    public Iterator<T> backIterator() {
+        return new FiltredIterator(table.clone().backIterator());
+    }
+
     public Class<T> type() {
         return table.type();
     }
 
-    @Override
     public ITable<T> clone() {
         return new FiltredTable<>(
                 table.clone(),
-                sizeOfTbl,
-                size,
-                mapper,
-                filter
+                filter,
+                cache,
+                cacheSize
         );
     }
 
     public T firstEnsure() {
-        Engine.assume(size > 0);
-        return getEnsure(0);
+        Iterator<T> iter = iterator();
+        Engine.assume(iter.hasNext());
+        return iter.next();
     }
 }

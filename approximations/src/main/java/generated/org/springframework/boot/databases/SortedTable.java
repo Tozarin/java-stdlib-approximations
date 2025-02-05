@@ -2,36 +2,59 @@ package generated.org.springframework.boot.databases;
 
 import kotlin.jvm.functions.Function2;
 
-public class SortedTable<T> implements ITable<T> {
+import java.lang.reflect.Array;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.function.Function;
+
+public class SortedTable<T, R> implements ITable<T> {
 
     public ITable<T> table;
     public int size;
     public int limit; // -1 if no limit
     public int offset; // 0 if no offset
+    public boolean direction; // true -  ASC, false - DESC
+    public boolean nulls; // true - LAST, false - FIRST
 
-    public Integer[] sorted; // from new indexes to old
-    public Integer[] backSorted; // from old to new
+    public int tblSize;
 
-    Function2<T, T, Boolean> comparer; // >
+    public Function<T, R> translate;
+    public Function2<R, R, Integer> comparer;
 
-    public SortedTable(ITable<T> table, int limit, int offset, Function2<T, T, Boolean> comparer) {
+    public T[] sorted;
+
+    public SortedTable(
+            ITable<T> table,
+            int limit,
+            int offset,
+            boolean direction,
+            boolean nulls,
+            Function<T, R> translate,
+            Function2<R, R, Integer> comparer
+    ) {
 
         this.table = table;
+        this.translate = translate;
         this.comparer = comparer;
         this.limit = limit;
         this.offset = offset;
+        this.direction = direction;
+        this.nulls = nulls;
 
-        int tblSize = table.size();
+        this.tblSize = table.size();
 
         if (limit == -1) {
             this.size = tblSize - offset;
-        }
-        else {
+        } else {
             this.size = Math.min(tblSize - offset, limit);
         }
 
-        this.sorted = new Integer[tblSize];
-        this.backSorted = new Integer[tblSize];
+        this.sorted = (T[]) Array.newInstance(table.type(), tblSize);
+        Iterator<T> tblIter = table.clone().iterator();
+        int ix = 0;
+        while (tblIter.hasNext()) {
+            sorted[ix++] = tblIter.next();
+        }
         Sort();
     }
 
@@ -40,49 +63,45 @@ public class SortedTable<T> implements ITable<T> {
             int limit,
             int offset,
             int size,
-            Function2<T, T, Boolean> comparer,
-            Integer[] sorted,
-            Integer[] backSorted
+            boolean direction,
+            boolean nulls,
+            int tblSize,
+            Function<T, R> translate,
+            Function2<R, R, Integer> comparer,
+            T[] sorted
     ) {
         this.table = table;
         this.limit = limit;
         this.offset = offset;
         this.size = size;
+        this.direction = direction;
+        this.nulls = nulls;
+        this.tblSize = tblSize;
+        this.translate = translate;
         this.comparer = comparer;
         this.sorted = sorted;
-        this.backSorted = backSorted;
     }
 
+    public boolean compare(R left, R right) {
+        if (left == null) return nulls; // NULLs always bigger or else
+        boolean common = comparer.invoke(left, right) > 0;
+        return common == direction;
+    }
+
+    // bubble sort
     public void Sort() {
-        int tblSize = sorted.length;
         for (int i = 0; i < tblSize; i++) {
             boolean swapped = false;
             for (int j = 0; j < tblSize - i - 1; j++) {
 
-                if (sorted[j] == null) { sorted[j] = j; }
-                if (sorted[j + 1] == null) { sorted[j + 1] = j + 1; }
+                R left = translate.apply(sorted[j]);
+                R right = translate.apply(sorted[j + 1]);
 
-                T ii = table.getEnsure(sorted[j]);
-                T jj = table.getEnsure(sorted[j + 1]);
+                if (compare(left, right)) {
 
-                // >
-                if (comparer.invoke(ii, jj)) {
-                    Integer tmpi = sorted[j];       // a
-                    Integer tmpip = sorted[j + 1];  // b
-
+                    T tmp = sorted[j];
                     sorted[j] = sorted[j + 1];
-                    sorted[j + 1] = tmpi;
-
-                    if (backSorted[tmpi] == null) { backSorted[tmpi] = tmpi; }
-                    if (backSorted[tmpip] == null) { backSorted[tmpip] = tmpip; }
-
-                    // sorted before |  back    | back     |
-                    //  swap         |  before  | after    |
-                    //   j   j+1     |  a    b  |  a    b  |
-                    //   a    b      |  j   j+1 | j+1   j  |
-                    Integer btmp = backSorted[tmpi];
-                    backSorted[tmpi] = backSorted[tmpip];
-                    backSorted[tmpip] = btmp;
+                    sorted[j + 1] = tmp;
 
                     swapped = true;
                 }
@@ -91,31 +110,61 @@ public class SortedTable<T> implements ITable<T> {
         }
     }
 
-    public int ConvertToOldIx(int ix) {
-        return ix + offset;
-    }
-
     @Override
     public int size() {
         return size;
     }
 
-    @Override
-    public T getEnsure(int ix) {
-        int oldIx = sorted[ConvertToOldIx(ix)];
-        return table.getEnsure(oldIx);
+    class SortedIterator implements Iterator<T> {
+
+        int ix;
+        int endIx;
+
+        public SortedIterator() {
+            this.ix = offset;
+            this.endIx = size;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return ix < endIx;
+        }
+
+        @Override
+        public T next() {
+            if (!hasNext()) throw new NoSuchElementException();
+            return sorted[ix++];
+        }
+    }
+
+    class SortedBackIterator implements Iterator<T> {
+
+        int ix;
+
+        public SortedBackIterator() {
+            this.ix = size - 1;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return offset <= ix;
+        }
+
+        @Override
+        public T next() {
+            if (!hasNext()) throw new NoSuchElementException();
+            return sorted[ix--];
+        }
     }
 
     @Override
-    public int indexIn(T t, int startIx, int endIx) {
-        int oldIx = table.indexIn(t, ConvertToOldIx(startIx), ConvertToOldIx(endIx));
-        if (oldIx < 0) return oldIx;
-        return backSorted[oldIx];
+    public Iterator<T> iterator() {
+        return new SortedIterator();
     }
 
     @Override
-    public boolean containsIn(T t, int startIx, int endIx) {
-        return indexIn(t, startIx, endIx) != -1;
+    public Iterator<T> backIterator() {
+        return new SortedBackIterator();
     }
 
     @Override
@@ -130,9 +179,16 @@ public class SortedTable<T> implements ITable<T> {
                 limit,
                 offset,
                 size,
+                direction,
+                nulls,
+                tblSize,
+                translate,
                 comparer,
-                sorted,
-                backSorted
+                sorted
         );
+    }
+
+    public static Integer stringComparer(String left, String right) {
+        return left.compareTo(right);
     }
 }

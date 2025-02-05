@@ -15,6 +15,9 @@ public class ListWrapper<T> implements List<T> {
     public int tblEndIx;
     public Class<T> type;
 
+    public Iterator<T> tblIter;
+    public Iterator<T> backTblIter;
+
     public SymbolicList<T> cache;
     public int sizeOfCache;
     public int wrpStartIx;
@@ -28,6 +31,9 @@ public class ListWrapper<T> implements List<T> {
         this.tblStartIx = 0;
         this.tblEndIx = tableSize;
         this.type = table.type();
+
+        this.tblIter = this.table.iterator();
+        this.backTblIter = this.table.backIterator();
 
         this.cache = Engine.makeSymbolicList();
         Engine.assume(cache != null);
@@ -44,6 +50,8 @@ public class ListWrapper<T> implements List<T> {
             int tblStartIx,
             int tblEndIx,
             Class<T> type,
+            Iterator<T> tblIter,
+            Iterator<T> backTblIter,
             SymbolicList<T> cache,
             int sizeOfCache,
             int wrpStartIx,
@@ -54,6 +62,8 @@ public class ListWrapper<T> implements List<T> {
         this.tblStartIx = tblStartIx;
         this.tblEndIx = tblEndIx;
         this.type = type;
+        this.tblIter = tblIter;
+        this.backTblIter = backTblIter;
         this.cache = cache;
         this.sizeOfCache = sizeOfCache;
         this.wrpStartIx = wrpStartIx;
@@ -105,25 +115,57 @@ public class ListWrapper<T> implements List<T> {
         return -1;
     }
 
-    public void cacheNext() {
+    public int findMiddle(T t) {
+        T cached = cacheUntil(t);
+        if (cached != null) return wrpStartIx;
+        return -1;
+    }
 
-        if (wrpStartIx == wrpEndIx) return;
-        T next = table.getEnsure(tblStartIx);
+    public int findMiddleLast(T t) {
+        T cached = cacheUntilBack(t);
+        if (cached != null) return wrpEndIx - 1;
+        return -1;
+    }
+
+    public T cacheNext() {
+
+        if (wrpStartIx == wrpEndIx) return null;
+        T next = tblIter.next();
         cache.set(wrpStartIx, next);
         wrpStartIx++;
         tblStartIx++;
+        return next;
     }
 
-    public void cachePrev() {
+    public T cachePrev() {
 
-        if (wrpStartIx == wrpEndIx) return;
-        T prev = table.getEnsure(tblEndIx - 1);
+        if (wrpStartIx == wrpEndIx) return null;
+        T prev = backTblIter.next();
         cache.set(wrpEndIx - 1, prev);
         wrpEndIx--;
         tblEndIx--;
+        return prev;
     }
 
-    public void cacheUntil(int ix) {
+    public T cacheUntil(T t) {
+
+        T cached = cacheNext();
+        while (cached != null && cached != t && !cached.equals(t)) {
+            cached = cacheNext();
+        }
+        return cached;
+    }
+
+    public T cacheUntilBack(T t) {
+
+        T cached = cachePrev();
+        while (cached != null && cached != t && !cached.equals(t)) {
+            cached = cachePrev();
+        }
+        return cached;
+    }
+
+    public void cacheUntilIx(int ix) {
 
         while (wrpStartIx <= ix && wrpStartIx < wrpEndIx) {
             cacheNext();
@@ -165,10 +207,10 @@ public class ListWrapper<T> implements List<T> {
 
     public boolean removeMiddle(T t) {
 
-        int ix = table.indexIn(t, tblStartIx, tblEndIx);
-        if (ix != -1) {
-            cacheUntil(ix);
-            cache.remove(ix);
+        T cached = cacheUntil(t);
+
+        if (cached != null) {
+            cache.remove(wrpStartIx);
 
             wrpStartIx--;
             wrpEndIx--;
@@ -259,8 +301,7 @@ public class ListWrapper<T> implements List<T> {
 
         T1[] array = a.length < size() ?
                 (T1[]) Array.newInstance(genericType, size())
-                : a
-                ;
+                : a;
         Iterator<T> iter = iterator();
 
         int ix = 0;
@@ -322,7 +363,7 @@ public class ListWrapper<T> implements List<T> {
         int sizeOfCol = c.size();
         if (sizeOfCol == 0) return false;
 
-        cacheUntil(index - 1);
+        cacheUntilIx(index - 1);
         for (T t : c) cache.insert(index++, t);
 
         wrpStartIx += sizeOfCol;
@@ -355,7 +396,7 @@ public class ListWrapper<T> implements List<T> {
         Engine.assume(newCache != null);
         Engine.assume(newCache.size() == 0);
 
-        cacheUntil(wrpEndIx);
+        cacheUntilIx(wrpEndIx);
         for (int i = 0; i < size(); i++) {
             T t = cache.get(i);
             if (c.contains(t)) newCache.insert(newSize++, t);
@@ -397,7 +438,7 @@ public class ListWrapper<T> implements List<T> {
 
         if (index < wrpStartIx || wrpEndIx <= index) return cache.get(index);
 
-        cacheUntil(index);
+        cacheUntilIx(index);
 
         return cache.get(index);
     }
@@ -422,8 +463,8 @@ public class ListWrapper<T> implements List<T> {
         if (index < wrpStartIx) {
             wrpStartIx++;
             wrpEndIx++;
-        } else if (index < wrpEndIx){
-            cacheUntil(index);
+        } else if (index < wrpEndIx) {
+            cacheUntilIx(index);
             wrpStartIx++;
             wrpEndIx++;
         }
@@ -442,7 +483,7 @@ public class ListWrapper<T> implements List<T> {
             wrpStartIx--;
             wrpEndIx--;
         } else if (index < wrpEndIx) {
-            cacheUntil(index);
+            cacheUntilIx(index);
             wrpStartIx--;
             wrpEndIx--;
         }
@@ -466,7 +507,7 @@ public class ListWrapper<T> implements List<T> {
         int leftIx = findLeft(t);
         if (leftIx != -1) return leftIx;
 
-        int middleIx = table.indexIn(t, tblStartIx, tblEndIx);
+        int middleIx = findMiddle(t);
         if (middleIx != -1) return middleIx;
 
         return findRight(t);
@@ -483,7 +524,7 @@ public class ListWrapper<T> implements List<T> {
         int rightIx = findRightLast(t);
         if (rightIx != -1) return rightIx;
 
-        int middleIx = table.indexIn(t, tblStartIx, tblEndIx);
+        int middleIx = findMiddleLast(t);
         if (middleIx != -1) return middleIx;
 
         return findLeftLast(t);
@@ -630,11 +671,19 @@ public class ListWrapper<T> implements List<T> {
         int newTblStartIx = startDif < 0 ? tblStartIx + startDif : tblStartIx;
         int newTblEndIx = endDif < 0 ? tblEndIx : tblEndIx - endDif;
 
+        Iterator<T> newTblIter = table.iterator();
+        for (int i = 0; i < tblStartIx; i++) newTblIter.next();
+
+        Iterator<T> newBackTblIter = table.backIterator();
+        for (int i = size() - 1; tblEndIx <= i; i--) newBackTblIter.next();
+
         return new ListWrapper<>(
                 table.clone(),
                 newTblStartIx,
                 newTblEndIx,
                 type,
+                newTblIter,
+                newBackTblIter,
                 newCache,
                 newSize,
                 newWrpStartIx,

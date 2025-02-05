@@ -3,6 +3,9 @@ package generated.org.springframework.boot.databases;
 import org.usvm.api.Engine;
 import org.usvm.api.SymbolicMap;
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
 // V --- type of id field
 public class BaseTable<V> implements ITable<Object[]> {
 
@@ -69,7 +72,6 @@ public class BaseTable<V> implements ITable<Object[]> {
         return row;
     }
 
-    @Override
     @SuppressWarnings("unchecked")
     public Object[] getEnsure(int ix) {
 
@@ -82,24 +84,56 @@ public class BaseTable<V> implements ITable<Object[]> {
         return row;
     }
 
-    @Override
-    @SuppressWarnings("unchecked")
-    public int indexIn(Object[] row, int startIx, int endIx) {
+    class BaseTableIterator implements Iterator<Object[]> {
 
-        V id = (V) row[idIndex];
-        if (ids.containsKey(id)) {
-            int ix = ids.get(id);
-            Engine.assume(ix < size());
-            Engine.assume(data[idIndex][ix] == id);
-            if (startIx <= ix && ix < endIx) return ix;
+        int ix;
+        int endIx;
+
+        public BaseTableIterator() {
+            this.ix = 0;
+            this.endIx = size();
         }
 
-        return -1;
+        @Override
+        public boolean hasNext() {
+            return ix < endIx;
+        }
+
+        @Override
+        public Object[] next() {
+            if (!hasNext()) throw new NoSuchElementException();
+            return getEnsure(ix++);
+        }
+    }
+
+    class BaseTableBackIterator implements Iterator<Object[]> {
+
+        int ix;
+
+        public BaseTableBackIterator() {
+            this.ix = size() - 1;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return 0 <= ix;
+        }
+
+        @Override
+        public Object[] next() {
+            if (!hasNext()) throw new NoSuchElementException();
+            return getEnsure(ix--);
+        }
     }
 
     @Override
-    public boolean containsIn(Object[] row, int startIx, int endIx) {
-        return indexIn(row, startIx, endIx) != -1;
+    public Iterator<Object[]> iterator() {
+        return new BaseTableIterator();
+    }
+
+    @Override
+    public Iterator<Object[]> backIterator() {
+        return new BaseTableBackIterator();
     }
 
     @Override

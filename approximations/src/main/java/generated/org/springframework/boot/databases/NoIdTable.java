@@ -2,6 +2,9 @@ package generated.org.springframework.boot.databases;
 
 import org.usvm.api.Engine;
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
 public class NoIdTable implements ITable<Object[]> {
 
     public Object[][] data;
@@ -49,41 +52,56 @@ public class NoIdTable implements ITable<Object[]> {
         return row;
     }
 
-    @Override
-    public Object[] getEnsure(int ix) {
+    class NoIdIterator implements Iterator<Object[]> {
 
-        Engine.assume(ix < size());
-        return getRow(ix);
-    }
+        int ix;
+        int endIx;
 
-    public boolean rowEqual(Object[] l, Object[] r) {
-
-        for (int i = 0; i < columnCount; i++) {
-            if (l[i] != r[i] || !l[i].equals(r[i])) {
-                return false;
-            }
+        public NoIdIterator() {
+            this.ix = 0;
+            this.endIx = size;
         }
 
-        return true;
-    }
-
-    @Override
-    public int indexIn(Object[] row, int startIx, int endIx) {
-
-        for (int i = startIx; i < endIx; i++) {
-
-            Object[] candidate = getRow(i);
-            if (rowEqual(row, candidate)) {
-                return i;
-            }
+        @Override
+        public boolean hasNext() {
+            return ix < endIx;
         }
 
-        return -1;
+        @Override
+        public Object[] next() {
+            if (!hasNext()) throw new NoSuchElementException();
+            return getRow(ix++);
+        }
+    }
+
+    class NoIdBackIterator implements Iterator<Object[]> {
+
+        int ix;
+
+        public NoIdBackIterator() {
+            this.ix = size - 1;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return 0 <= ix;
+        }
+
+        @Override
+        public Object[] next() {
+            if (!hasNext()) throw new NoSuchElementException();
+            return getRow(ix--);
+        }
     }
 
     @Override
-    public boolean containsIn(Object[] row, int startIx, int endIx) {
-        return indexIn(row, startIx, endIx) != -1;
+    public Iterator<Object[]> iterator() {
+        return new NoIdIterator();
+    }
+
+    @Override
+    public Iterator<Object[]> backIterator() {
+        return new NoIdBackIterator();
     }
 
     @Override

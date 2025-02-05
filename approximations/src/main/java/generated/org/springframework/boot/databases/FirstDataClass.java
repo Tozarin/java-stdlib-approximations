@@ -56,9 +56,9 @@ public class FirstDataClass {
                 new MappedTable<>(
                         new FiltredTable<>(
                                 SpringDatabases._blanckAdd,
-                                this::_oneToManyAddTableBetweenFilter
+                                this::_oneToManyAddTableFilter
                         ),
-                        this::_oneToManyAddTableFilter,
+                        this::_oneToManyAddTableSelector,
                         Integer.class
                 )
         );
@@ -77,9 +77,9 @@ public class FirstDataClass {
                 new MappedTable<>(
                         new FiltredTable<>(
                                 SpringDatabases._blanckAdd,
-                                this::_manyToManyAddTableBetweenFilter
+                                this::_manyToManyAddTableFilter
                         ),
-                        this::_manyToManyAddTableFilter,
+                        this::_manyToManyAddTableSelector,
                         Integer.class
                 )
         );
@@ -87,7 +87,7 @@ public class FirstDataClass {
         this.manyToMany = new ListWrapper<>(
                 new FiltredTable<>(
                         manyToManyCondition,
-                        this::_manyToManyAddTableFilter
+                        this::_manyToManyFilter
                 )
         );
     }
@@ -100,7 +100,7 @@ public class FirstDataClass {
         return subclass._getId() == oneToMany_id;
     }
 
-    public Boolean _oneToManyAddTableBetweenFilter(Object[] row) {
+    public Boolean _oneToManyAddTableFilter(Object[] row) {
         return row[0] == id; // rows in between table that linked with this
     }
 
@@ -109,7 +109,7 @@ public class FirstDataClass {
     //  _additional table for join_
     // |  fdcId  |  ..  |  sdcId  | -> sdcId
     // |________|______|__________|
-    public Integer _oneToManyAddTableFilter(Object[] row) {
+    public Integer _oneToManyAddTableSelector(Object[] row) {
         return (Integer) row[1];
     }
 
@@ -121,15 +121,24 @@ public class FirstDataClass {
         return subclass._getId() == manyToOne_id;
     }
 
-    public Boolean _manyToManyAddTableBetweenFilter(Object[] row) {
+    public Boolean _manyToManyAddTableFilter(Object[] row) {
         return row[0] == id;
     }
 
-    public Integer _manyToManyAddTableFilter(Object[] row) {
+    public Integer _manyToManyAddTableSelector(Object[] row) {
         return (Integer) row[1];
     }
 
-    public Boolean _manyToManyAddTableFilter(SecondDataClass subclass) {
+    public Boolean _manyToManyFilter(SecondDataClass subclass) {
         return manyToManySet.contains(subclass._getId());
+    }
+
+    public Object[] _serilizer() {
+        Object[] row = new Object[4];
+        row[0] = id;
+        row[1] = oneToOne_id;
+        row[2] = oneToMany_id;
+        row[3] = manyToOne_id;
+        return row;
     }
 }

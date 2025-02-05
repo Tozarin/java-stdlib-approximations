@@ -1,26 +1,26 @@
 package generated.org.springframework.boot.databases;
 
-import org.usvm.api.Engine;
-
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.Set;
 
 public class DistinctTable<T> implements ITable<T> {
 
     public ITable<T> table;
 
-    public Map<T, Integer> cache;
+    public Set<T> cache;
     public int cacheSize;
 
     public DistinctTable(ITable<T> table) {
 
         this.table = table;
 
-        this.cache = new HashMap<>();
-        this.cacheSize = 0;
+        this.cache = new HashSet<>();
+        this.cacheSize = -1;
     }
 
-    public DistinctTable(ITable<T> table, Map<T, Integer> cache, int cacheSize) {
+    public DistinctTable(ITable<T> table, Set<T> cache, int cacheSize) {
         this.table = table;
         this.cache = cache;
         this.cacheSize = cacheSize;
@@ -28,45 +28,74 @@ public class DistinctTable<T> implements ITable<T> {
 
     @Override
     public int size() {
-        for (int i = 0; i < table.size(); i++) { getEnsure(i); }
 
+        if (cacheSize != -1) return cacheSize;
+
+        Iterator<T> iter = new DistinctIterator();
+        int count = 0;
+        while (iter.hasNext()) {
+            if (cache.add(iter.next())) count++;
+        }
+
+        cacheSize = count;
         return cacheSize;
     }
 
-    @Override
-    public T getEnsure(int ix) {
+    class DistinctIterator implements Iterator<T> {
 
-        T t = table.getEnsure(ix);
+        Iterator<T> tblIter;
+        T curr;
 
-        while (true) {
-            if (!cache.containsKey(t)) {
-                cache.put(t, ix);
-                cacheSize++;
-                return t;
+        Set<T> cache;
+
+        public DistinctIterator(Iterator<T> tblIter) {
+            this.tblIter = tblIter;
+            this.curr = null;
+            this.cache = new HashSet<>();
+        }
+
+        public DistinctIterator() {
+            this.tblIter = table.clone().iterator();
+            this.curr = null;
+            this.cache = new HashSet<>();
+        }
+
+        @Override
+        public boolean hasNext() {
+
+            if (curr != null) return true;
+
+            while (tblIter.hasNext()) {
+                T candidate = tblIter.next();
+                if (cache.add(candidate)) {
+                    curr = candidate;
+                    return true;
+                }
             }
 
-            if (cache.get(t) == ix) { return t; }
+            return false;
+        }
 
-            t = table.getEnsure(ix++);
+        @Override
+        public T next() {
+            if (!hasNext()) throw new NoSuchElementException();
+
+            T tmp = curr;
+            curr = null;
+
+            return tmp;
         }
     }
 
     @Override
-    public int indexIn(T t, int startIx, int endIx) {
-        if (cache.containsKey(t)) {
-            int ix = cache.get(t);
-            if (ix < startIx || endIx <= ix) return -1;
-            return ix;
-        }
-
-        int ix = table.indexIn(t, startIx, endIx);
-        if (ix != -1) cache.put(t, ix);
-        return ix;
+    public Iterator<T> iterator() {
+        if (cacheSize != -1) return cache.iterator();
+        return new DistinctIterator();
     }
 
     @Override
-    public boolean containsIn(T t, int startIx, int endIx) {
-        return indexIn(t, startIx, endIx) != -1;
+    public Iterator<T> backIterator() {
+        return new DistinctIterator(table.clone().backIterator());
     }
 
     @Override

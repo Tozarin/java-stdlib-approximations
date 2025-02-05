@@ -1,7 +1,6 @@
 package generated.org.springframework.boot.databases;
 
-import org.usvm.api.Engine;
-
+import java.util.Iterator;
 import java.util.function.Function;
 
 public class MappedTable<T, R> implements ITable<R> {
@@ -25,29 +24,38 @@ public class MappedTable<T, R> implements ITable<R> {
         return size;
     }
 
-    @Override
-    public R getEnsure(int ix) {
+    class MappedIterator implements Iterator<R> {
 
-        T t = table.getEnsure(ix);
+        Iterator<T> tblIter;
 
-        return mapper.apply(t);
+        public MappedIterator() {
+            this(false);
+        }
+
+        public MappedIterator(boolean reversed) {
+            if (reversed) this.tblIter = table.clone().backIterator();
+            this.tblIter = table.clone().iterator();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return tblIter.hasNext();
+        }
+
+        @Override
+        public R next() {
+            return mapper.apply(tblIter.next());
+        }
     }
 
     @Override
-    public int indexIn(R r, int startIx, int endIx) {
-
-        T t = Engine.makeSymbolic(table.type());
-        Engine.assume(t != null);
-
-        R mappedT = mapper.apply(t);
-        Engine.assume(r == mappedT);
-
-        return table.indexIn(t, startIx, endIx);
+    public Iterator<R> iterator() {
+        return new MappedIterator();
     }
 
     @Override
-    public boolean containsIn(R r, int startIx, int endIx) {
-        return indexIn(r, startIx, endIx) != -1;
+    public Iterator<R> backIterator() {
+        return new MappedIterator(true);
     }
 
     @Override

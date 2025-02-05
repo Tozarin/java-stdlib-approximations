@@ -1,8 +1,9 @@
 package generated.org.springframework.boot.databases;
 
-import org.usvm.api.Engine;
 import runtime.LibSLRuntime;
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.function.Function;
 
 public class JoinedTable<L, R> implements ITable<Object[]> {
@@ -10,11 +11,8 @@ public class JoinedTable<L, R> implements ITable<Object[]> {
     public ITable<L> leftTable;
     public ITable<R> rightTable;
 
-    public int leftSize;
-    public int rightSize;
-
-    public Function<L, Object[]> leftSerializer;
-    public Function<R, Object[]> rightSerializer;
+    Function<L, Object[]> leftSerializer;
+    Function<R, Object[]> rightSerializer;
 
     public JoinedTable(
             ITable<L> leftTable,
@@ -24,26 +22,68 @@ public class JoinedTable<L, R> implements ITable<Object[]> {
     ) {
         this.leftTable = leftTable;
         this.rightTable = rightTable;
-
         this.leftSerializer = leftSerializer;
         this.rightSerializer = rightSerializer;
-
-        this.leftSize = leftTable.size();
-        this.rightSize = rightTable.size();
     }
 
-    public int leftIx(int ix) {
-
-        if (rightSize == 0) return -1;
-
-        return ix / rightSize;
+    public int size() {
+        return leftTable.size() * rightTable.size();
     }
 
-    public int rightIx(int ix) {
+    class JoinedIterator implements Iterator<Object[]> {
 
-        if (leftSize == 0) return -1;
+        Iterator<L> leftIter;
+        Iterator<R> rightIter;
 
-        return ix % leftSize;
+        L currLeft;
+
+        boolean isEmpty;
+
+        boolean reversed;
+
+        public JoinedIterator() {
+            this(false);
+        }
+
+        public JoinedIterator(boolean reversed) {
+            this.reversed = reversed;
+            resetLeftIter();
+            resetRightIter();
+
+            this.isEmpty = !leftIter.hasNext() || !rightIter.hasNext();
+            this.currLeft = leftIter.next();
+        }
+
+        private void resetLeftIter() {
+            if (reversed) leftIter = leftTable.clone().backIterator();
+            leftIter = leftTable.clone().iterator();
+        }
+
+        private void resetRightIter() {
+            if (reversed) rightIter = rightTable.clone().backIterator();
+            rightIter = rightTable.clone().iterator();
+        }
+
+        @Override
+        public boolean hasNext() {
+            if (isEmpty) return false;
+
+            return leftIter.hasNext() || rightIter.hasNext();
+        }
+
+        @Override
+        public Object[] next() {
+            if (!hasNext()) throw new NoSuchElementException();
+
+            if (!rightIter.hasNext()) {
+                currLeft = leftIter.next();
+                resetRightIter();
+            }
+
+            R currRight = rightIter.next();
+
+            return composite(currLeft, currRight);
+        }
     }
 
     public Object[] composite(L l, R r) {
@@ -58,58 +98,18 @@ public class JoinedTable<L, R> implements ITable<Object[]> {
         return row;
     }
 
-    @Override
-    public int size() {
-        return leftSize * rightSize;
+    public Iterator<Object[]> iterator() {
+        return new JoinedIterator();
     }
 
-    @Override
-    public Object[] getEnsure(int ix) {
-
-        L l = leftTable.getEnsure(leftIx(ix));
-        R r = rightTable.getEnsure(rightIx(ix));
-
-        return composite(l, r);
+    public Iterator<Object[]> backIterator() {
+        return new JoinedIterator(true);
     }
 
-    @Override
-    public int indexIn(Object[] row, int startIx, int endIx) {
-
-        int lStrIx = leftIx(startIx);
-        int lEndIx = leftIx(endIx);
-        if (lStrIx == lEndIx) lEndIx++;
-
-        int rStrIx = rightIx(startIx);
-        int rEndIx = rightIx(endIx);
-        if (rStrIx == rEndIx) rEndIx++;
-
-        L l = Engine.makeSymbolic(leftTable.type());
-        Engine.assume(l != null);
-        R r = Engine.makeSymbolic(rightTable.type());
-        Engine.assume(r != null);
-
-        Object[] composedRow = composite(l, r);
-        for (int i = 0; i < row.length; i++) Engine.assume(row[i] == composedRow[i]);
-
-        int lIx = leftTable.indexIn(l, lStrIx, lEndIx);
-        int rIx = rightTable.indexIn(r, rStrIx, rEndIx);
-
-        if (lIx == -1 || rIx == -1) return -1;
-
-        return leftSize * lIx + rIx;
-    }
-
-    @Override
-    public boolean containsIn(Object[] row, int startIx, int endIx) {
-        return indexIn(row, startIx, endIx) != -1;
-    }
-
-    @Override
     public Class<Object[]> type() {
         return Object[].class;
     }
 
-    @Override
     public ITable<Object[]> clone() {
         return new JoinedTable<>(
                 leftTable.clone(),

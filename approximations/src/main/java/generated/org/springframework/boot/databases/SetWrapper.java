@@ -6,6 +6,7 @@ import java.util.*;
 public class SetWrapper<T> implements Set<T> {
 
     public ITable<T> table;
+    public Iterator<T> tblIter;
     public int sizeOfTable;
     public int ptr;
     public Class<T> type;
@@ -19,6 +20,7 @@ public class SetWrapper<T> implements Set<T> {
     public SetWrapper(ITable<T> table) {
 
         this.table = table.clone();
+        this.tblIter = this.table.iterator();
         this.sizeOfTable = table.size();
         this.ptr = 0;
         this.type = table.type();
@@ -30,27 +32,36 @@ public class SetWrapper<T> implements Set<T> {
         this.modCount = 0;
     }
 
-    public boolean cacheNext() {
+    public T cacheNext() {
 
-        if (ptr == sizeOfTable) return false;
+        if (ptr == sizeOfTable) return null;
 
-        T t = table.getEnsure(ptr);
+        T t = tblIter.next();
         ptr++;
 
-        if (removedCache.contains(t)) return false;
+        if (removedCache.contains(t)) return null;
 
         if (cache.add(t)) {
             sizeOfCache++;
-            return true;
+            return t;
         }
 
-        return false;
+        return null;
+    }
+
+    public T cacheUntil(T t) {
+
+        T cached = cacheNext();
+        while (cached != null && cached != t && !cached.equals(t)) {
+            cached = cacheNext();
+        }
+        return cached;
     }
 
     public boolean cacheUntilCached() {
 
         if (ptr == sizeOfTable) return false;
-        if (cacheNext()) return true;
+        if (cacheNext() != null) return true;
 
         return cacheUntilCached();
     }
@@ -84,26 +95,25 @@ public class SetWrapper<T> implements Set<T> {
 
         if (ptr == sizeOfTable) return false;
 
-//        if (o == null) throw new NullPointerException();
-//        if (!type.isInstance(o)) throw new ClassCastException();
-//
-//        T t = type.cast(o);
-
-        return table.containsIn((T) o, ptr, sizeOfTable);
+        return cacheUntil((T) o) != null;
     }
 
     class SetWrapperIterator implements Iterator<T> {
 
-        public T curr;
-        public Iterator<T> cacheIter;
+        Iterator<T> tblIter;
+        Iterator<T> cacheIter;
+        T curr;
 
-        public int expectedModCount;
+        int expectedModCount;
 
         public SetWrapperIterator() {
+            this.tblIter = table.clone().iterator();
+            for (int i = 0; i < ptr; i++) {
+                tblIter.next();
+            }
 
-            this.curr = null;
             this.cacheIter = cache.iterator();
-
+            this.curr = null;
             this.expectedModCount = modCount;
         }
 
@@ -112,24 +122,31 @@ public class SetWrapper<T> implements Set<T> {
 
             if (curr != null) return true;
 
-            if (!cacheIter.hasNext()) {
-
-                if (cacheUntilCached()) {
-                    curr = table.getEnsure(ptr - 1);
-                    return true;
+            if (cacheIter.hasNext()) {
+                T candidate = cacheIter.next();
+                if (removedCache.contains(candidate)) {
+                    return hasNext();
                 }
 
-                return false;
-            };
+                curr = candidate;
+                return true;
+            }
 
-            curr = cacheIter.next();
+            if (tblIter.hasNext()) {
+                T candidate = tblIter.next();
+                if (removedCache.contains(candidate) || cache.contains(candidate)) {
+                    return hasNext();
+                }
 
-            return true;
+                curr = candidate;
+                return true;
+            }
+
+            return false;
         }
 
         @Override
         public T next() {
-
             if (!hasNext()) throw new NoSuchElementException();
             if (expectedModCount != modCount) throw new ConcurrentModificationException();
 
@@ -166,8 +183,7 @@ public class SetWrapper<T> implements Set<T> {
 
         T1[] array = a.length < size() ?
                 (T1[]) Array.newInstance(genericType, size())
-                : a
-                ;
+                : a;
         Iterator<T> iter = iterator();
 
         int ix = 0;
@@ -235,7 +251,8 @@ public class SetWrapper<T> implements Set<T> {
             if (contains(o)) {
                 newCache.add((T) o);
                 sizeOfNewCache++;
-            };
+            }
+            ;
         }
 
         boolean isChanged = false;
