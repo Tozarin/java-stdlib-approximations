@@ -23,6 +23,7 @@ public class SortedTable<T, R> implements ITable<T> {
 
     public T[] sorted;
 
+    @SuppressWarnings("unchecked")
     public SortedTable(
             ITable<T> table,
             int limit,
