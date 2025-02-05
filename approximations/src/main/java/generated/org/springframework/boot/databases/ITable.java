@@ -2,11 +2,9 @@ package generated.org.springframework.boot.databases;
 
 import java.util.Iterator;
 
-public interface ITable<T> {
+public interface ITable<T> extends Iterable<T> {
 
     int size();
-
-    Iterator<T> iterator();
 
     Iterator<T> backIterator();
 

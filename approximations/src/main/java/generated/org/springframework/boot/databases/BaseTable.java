@@ -1,5 +1,6 @@
 package generated.org.springframework.boot.databases;
 
+import org.jetbrains.annotations.NotNull;
 import org.usvm.api.Engine;
 import org.usvm.api.SymbolicMap;
 
@@ -112,7 +113,9 @@ public class BaseTable<V> implements ITable<Object[]> {
 
             if (curr != null) return true;
 
-            while (removedIx.contains(ix)) { ix++; }
+            while (removedIx.contains(ix)) {
+                ix++;
+            }
 
             if (endIx <= ix) return false;
             curr = getEnsure(ix++);
@@ -147,7 +150,9 @@ public class BaseTable<V> implements ITable<Object[]> {
 
             if (curr != null) return true;
 
-            while (removedIx.contains(ix)) { ix--; }
+            while (removedIx.contains(ix)) {
+                ix--;
+            }
             if (ix < 0) return false;
 
             curr = getEnsure(ix--);
@@ -228,7 +233,7 @@ public class BaseTable<V> implements ITable<Object[]> {
         }
     }
 
-    // need serializer
+    // need crudManager
     @SuppressWarnings("unchecked")
     public void delete(Object[] row) {
         V id = (V) row[idIndex];
@@ -245,7 +250,7 @@ public class BaseTable<V> implements ITable<Object[]> {
         countOfRemoved = 0;
     }
 
-    // use serializer
+    // use crudManager
     // public void deleteAll(Iterable<? extends T> es)
 
     public void deleteAllById(Iterable<? extends V> keys) {
@@ -260,25 +265,63 @@ public class BaseTable<V> implements ITable<Object[]> {
         return !removedIx.contains(id);
     }
 
-    // need deserializer or mb use ListWrapper
+    // need crudManager
     public Iterable<Object[]> findAll() {
         return this;
     }
 
-    // need deserializer
+    // need crudManager
     public Optional<Object[]> findById(V key) {
         if (!existsById(key)) return Optional.empty();
         int id = ids.get(key);
         return Optional.of(getRow(id));
     }
 
-    // need deserializer
+    // need crudManager
     public Iterable<Object[]> findAllById(Iterable<V> keys) {
-        List<Object[]> rows = new ArrayList<>();
-        for (V id : keys) {
-            Optional<Object[]> row = findById(id);
-            row.ifPresent(rows::add);
+        class FindAllByIdIterable implements Iterable<Object[]> {
+            class FindAllByIdIterator implements Iterator<Object[]> {
+                Iterator<V> keysIter;
+                V currKey;
+
+                public FindAllByIdIterator() {
+                    this.keysIter = keys.iterator();
+                    this.currKey = null;
+                }
+
+                @Override
+                public boolean hasNext() {
+                    if (currKey != null) return true;
+
+                    while (keysIter.hasNext()) {
+                        V key = keysIter.next();
+                        if (ids.containsKey(key)) {
+                            currKey = key;
+                            return true;
+                        }
+                    }
+
+                    return false;
+                }
+
+                @Override
+                public Object[] next() {
+                    if (!hasNext()) throw new NoSuchElementException();
+
+                    int ix = ids.get(currKey);
+                    currKey = null;
+
+                    return getRow(ix);
+                }
+            }
+
+            @NotNull
+            @Override
+            public Iterator<Object[]> iterator() {
+                return new FindAllByIdIterator();
+            }
         }
-        return rows;
+
+        return new FindAllByIdIterable();
     }
 }
