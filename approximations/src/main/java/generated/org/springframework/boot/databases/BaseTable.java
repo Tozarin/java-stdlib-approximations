@@ -3,8 +3,7 @@ package generated.org.springframework.boot.databases;
 import org.usvm.api.Engine;
 import org.usvm.api.SymbolicMap;
 
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 // V --- type of id field
 public class BaseTable<V> implements ITable<Object[]> {
@@ -21,6 +20,9 @@ public class BaseTable<V> implements ITable<Object[]> {
 
     public int columnCount;
     public int idIndex;
+
+    public Set<Integer> removedIx;
+    public int countOfRemoved;
 
     public BaseTable(
             int idIndex,
@@ -41,6 +43,9 @@ public class BaseTable<V> implements ITable<Object[]> {
         this.ids = Engine.makeSymbolicMap();
         Engine.assume(ids != null);
         Engine.assume(ids.size() == size);
+
+        this.removedIx = new HashSet<>();
+        this.countOfRemoved = 0;
     }
 
     public BaseTable(
@@ -48,18 +53,22 @@ public class BaseTable<V> implements ITable<Object[]> {
             int size,
             SymbolicMap<V, Integer> ids,
             int columnCount,
-            int idIndex
+            int idIndex,
+            Set<Integer> removedIx,
+            int countOfRemoved
     ) {
         this.data = data;
         this.size = size;
         this.ids = ids;
         this.columnCount = columnCount;
         this.idIndex = idIndex;
+        this.removedIx = removedIx;
+        this.countOfRemoved = countOfRemoved;
     }
 
     @Override
     public int size() {
-        return size;
+        return size - countOfRemoved;
     }
 
     public Object[] getRow(int ix) {
@@ -89,20 +98,36 @@ public class BaseTable<V> implements ITable<Object[]> {
         int ix;
         int endIx;
 
+        Object[] curr;
+
         public BaseTableIterator() {
             this.ix = 0;
             this.endIx = size();
+
+            this.curr = null;
         }
 
         @Override
         public boolean hasNext() {
-            return ix < endIx;
+
+            if (curr != null) return true;
+
+            while (removedIx.contains(ix)) { ix++; }
+
+            if (endIx <= ix) return false;
+            curr = getEnsure(ix++);
+
+            return true;
         }
 
         @Override
         public Object[] next() {
             if (!hasNext()) throw new NoSuchElementException();
-            return getEnsure(ix++);
+
+            Object[] tmp = curr;
+            curr = null;
+
+            return tmp;
         }
     }
 
@@ -110,19 +135,34 @@ public class BaseTable<V> implements ITable<Object[]> {
 
         int ix;
 
+        Object[] curr;
+
         public BaseTableBackIterator() {
             this.ix = size() - 1;
+            this.curr = null;
         }
 
         @Override
         public boolean hasNext() {
-            return 0 <= ix;
+
+            if (curr != null) return true;
+
+            while (removedIx.contains(ix)) { ix--; }
+            if (ix < 0) return false;
+
+            curr = getEnsure(ix--);
+
+            return true;
         }
 
         @Override
         public Object[] next() {
             if (!hasNext()) throw new NoSuchElementException();
-            return getEnsure(ix--);
+
+            Object[] tmp = curr;
+            curr = null;
+
+            return tmp;
         }
     }
 
@@ -148,7 +188,97 @@ public class BaseTable<V> implements ITable<Object[]> {
                 size,
                 ids,
                 columnCount,
-                idIndex
+                idIndex,
+                new HashSet<>(removedIx),
+                countOfRemoved
         );
+    }
+
+    @SuppressWarnings("unchecked")
+    public void save(Object[] row) {
+        V id = (V) row[idIndex];
+        if (ids.containsKey(id)) {
+            int ix = ids.get(id);
+            for (int i = 0; i < columnCount; i++) {
+                data[i][ix] = row[ix];
+            }
+
+            if (removedIx.add(ix)) countOfRemoved--;
+        }
+
+        for (int i = 0; i < columnCount; i++) {
+            data[i] = Arrays.copyOf(data[i], size + 1);
+            data[i][size] = row[i];
+        }
+
+        ids.set(id, size);
+        size++;
+    }
+
+    public void saveAll(Iterable<Object[]> rows) {
+        for (Object[] row : rows) {
+            save(row);
+        }
+    }
+
+    public void deleteById(V id) {
+        if (ids.containsKey(id)) {
+            int ix = ids.get(id);
+            if (removedIx.add(ix)) countOfRemoved++;
+        }
+    }
+
+    // need serializer
+    @SuppressWarnings("unchecked")
+    public void delete(Object[] row) {
+        V id = (V) row[idIndex];
+        deleteById(id);
+    }
+
+    public void deleteAll() {
+        data = new Object[countOfRemoved][0];
+        size = 0;
+        ids = Engine.makeSymbolicMap();
+        Engine.assume(ids != null);
+        Engine.assume(ids.size() == 0);
+        removedIx = new HashSet<>();
+        countOfRemoved = 0;
+    }
+
+    // use serializer
+    // public void deleteAll(Iterable<? extends T> es)
+
+    public void deleteAllById(Iterable<? extends V> keys) {
+        for (V id : keys) {
+            deleteById(id);
+        }
+    }
+
+    public boolean existsById(V key) {
+        if (!ids.containsKey(key)) return false;
+        int id = ids.get(key);
+        return !removedIx.contains(id);
+    }
+
+    // need deserializer or mb use ListWrapper
+    public Iterable<Object[]> findAll() {
+        return this;
+    }
+
+    // need deserializer
+    public Optional<Object[]> findById(V key) {
+        if (!existsById(key)) return Optional.empty();
+        int id = ids.get(key);
+        return Optional.of(getRow(id));
+    }
+
+    // need deserializer
+    public Iterable<Object[]> findAllById(Iterable<V> keys) {
+        List<Object[]> rows = new ArrayList<>();
+        for (V id : keys) {
+            Optional<Object[]> row = findById(id);
+            row.ifPresent(rows::add);
+        }
+        return rows;
     }
 }
