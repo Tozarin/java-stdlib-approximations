@@ -67,6 +67,18 @@ public class SortedTable<T, R> implements ITable<T> {
             ITable<T> table,
             int limit,
             int offset,
+            boolean direction,
+            boolean nulls,
+            Function2<T, Object[], R> translate,
+            Function2<R, R, Integer> comparer
+    ) {
+        this(table, limit, offset, direction, nulls, translate, comparer, new Object[0]);
+    }
+
+    public SortedTable(
+            ITable<T> table,
+            int limit,
+            int offset,
             int size,
             boolean direction,
             boolean nulls,

@@ -29,6 +29,10 @@ public class FiltredTable<T> implements ITable<T> {
         this.methodArgs = methodArgs;
     }
 
+    public FiltredTable(ITable<T> table, Function2<T, Object[], Boolean> filter) {
+        this(table, filter, new Object[0]);
+    }
+
     public FiltredTable(
             ITable<T> table,
             Function2<T, Object[], Boolean> filter,

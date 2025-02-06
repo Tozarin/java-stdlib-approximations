@@ -24,6 +24,10 @@ public class MappedTable<T, R> implements ITable<R> {
         this.methodArgs = methodArgs;
     }
 
+    public MappedTable(ITable<T> table, Function2<T, Object[], R> mapper, Class<R> type) {
+        this(table, mapper, type, new Object[0]);
+    }
+
     public R applyMapper(T t) {
         return mapper.invoke(t, methodArgs);
     }
