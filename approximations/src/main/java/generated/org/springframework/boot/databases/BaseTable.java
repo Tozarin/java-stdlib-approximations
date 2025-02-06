@@ -209,6 +209,7 @@ public class BaseTable<V> implements ITable<Object[]> {
             }
 
             if (removedIx.add(ix)) countOfRemoved--;
+            return;
         }
 
         for (int i = 0; i < columnCount; i++) {

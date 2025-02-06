@@ -22,6 +22,20 @@ public class CrudManager<T, V> {
         this.deserializer = deserializer;
     }
 
+    public T save(T t) {
+        Object[] row = serializer.apply(t);
+        table.save(row);
+        return t;
+    }
+
+    public Iterable<? extends T> saveAll(Iterable<? extends T> ts) {
+        for (T t : ts) {
+            Object[] row = serializer.apply(t);
+            table.save(row);
+        }
+        return ts;
+    }
+
     public void delete(T t) {
         Object[] row = serializer.apply(t);
         table.delete(row);

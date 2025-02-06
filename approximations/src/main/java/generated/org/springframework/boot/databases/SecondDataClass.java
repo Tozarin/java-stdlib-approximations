@@ -22,12 +22,13 @@ public class SecondDataClass {
         this.subclasses = new ListWrapper<>(
                 new FiltredTable<>(
                         subclassesCondition,
-                        this::_subclassesFilter
+                        this::_subclassesFilter,
+                        new Object[0]
                 )
         );
     }
 
-    public Boolean _subclassesFilter(FirstDataClass subclass) {
+    public Boolean _subclassesFilter(FirstDataClass subclass, Object[] methodArgs) {
         return subclass._getId() == subclasses_id;
     }
 }

@@ -5,7 +5,6 @@ import kotlin.jvm.functions.Function2;
 import java.lang.reflect.Array;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.function.Function;
 
 public class SortedTable<T, R> implements ITable<T> {
 
@@ -18,10 +17,13 @@ public class SortedTable<T, R> implements ITable<T> {
 
     public int tblSize;
 
-    public Function<T, R> translate;
+    public Function2<T, Object[], R> translate;
     public Function2<R, R, Integer> comparer;
 
     public T[] sorted;
+
+    // arguments of original repository method
+    Object[] methodArgs;
 
     @SuppressWarnings("unchecked")
     public SortedTable(
@@ -30,8 +32,9 @@ public class SortedTable<T, R> implements ITable<T> {
             int offset,
             boolean direction,
             boolean nulls,
-            Function<T, R> translate,
-            Function2<R, R, Integer> comparer
+            Function2<T, Object[], R> translate,
+            Function2<R, R, Integer> comparer,
+            Object[] methodArgs
     ) {
 
         this.table = table;
@@ -41,6 +44,7 @@ public class SortedTable<T, R> implements ITable<T> {
         this.offset = offset;
         this.direction = direction;
         this.nulls = nulls;
+        this.methodArgs = methodArgs;
 
         this.tblSize = table.size();
 
@@ -67,8 +71,9 @@ public class SortedTable<T, R> implements ITable<T> {
             boolean direction,
             boolean nulls,
             int tblSize,
-            Function<T, R> translate,
+            Function2<T, Object[], R> translate,
             Function2<R, R, Integer> comparer,
+            Object[] methodArgs,
             T[] sorted
     ) {
         this.table = table;
@@ -80,6 +85,7 @@ public class SortedTable<T, R> implements ITable<T> {
         this.tblSize = tblSize;
         this.translate = translate;
         this.comparer = comparer;
+        this.methodArgs = methodArgs;
         this.sorted = sorted;
     }
 
@@ -89,14 +95,18 @@ public class SortedTable<T, R> implements ITable<T> {
         return common == direction;
     }
 
+    public R applyTranslate(T t) {
+        return translate.invoke(t, methodArgs);
+    }
+
     // bubble sort
     public void Sort() {
         for (int i = 0; i < tblSize; i++) {
             boolean swapped = false;
             for (int j = 0; j < tblSize - i - 1; j++) {
 
-                R left = translate.apply(sorted[j]);
-                R right = translate.apply(sorted[j + 1]);
+                R left = applyTranslate(sorted[j]);
+                R right = applyTranslate(sorted[j + 1]);
 
                 if (compare(left, right)) {
 
@@ -185,6 +195,7 @@ public class SortedTable<T, R> implements ITable<T> {
                 tblSize,
                 translate,
                 comparer,
+                methodArgs,
                 sorted
         );
     }

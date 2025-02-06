@@ -1,39 +1,50 @@
 package generated.org.springframework.boot.databases;
 
+import kotlin.jvm.functions.Function2;
 import org.usvm.api.Engine;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.function.Predicate;
 
 public class FiltredTable<T> implements ITable<T> {
 
     public ITable<T> table;
-    public Predicate<T> filter;
+    public Function2<T, Object[], Boolean> filter;
 
     public List<T> cache;
     public int cacheSize;
 
-    public FiltredTable(ITable<T> table, Predicate<T> filter) {
+    // arguments of original repository method
+    Object[] methodArgs;
+
+    public FiltredTable(ITable<T> table, Function2<T, Object[], Boolean> filter, Object[] methodArgs) {
         this.table = table;
         this.filter = filter;
 
         this.cache = new ArrayList<>();
         this.cacheSize = -1;
+
+        this.methodArgs = methodArgs;
     }
 
     public FiltredTable(
             ITable<T> table,
-            Predicate<T> filter,
+            Function2<T, Object[], Boolean> filter,
             List<T> cache,
-            int cacheSize
+            int cacheSize,
+            Object[] methodArgs
     ) {
         this.table = table;
         this.filter = filter;
         this.cache = cache;
         this.cacheSize = cacheSize;
+        this.methodArgs = methodArgs;
+    }
+
+    public boolean callFilter(T t) {
+        return filter.invoke(t, methodArgs);
     }
 
     public int size() {
@@ -44,7 +55,7 @@ public class FiltredTable<T> implements ITable<T> {
         int count = 0;
         while (iter.hasNext()) {
             T candidate = iter.next();
-            if (filter.test(candidate)) {
+            if (callFilter(candidate)) {
                 count++;
                 cache.add(candidate);
             }
@@ -76,7 +87,7 @@ public class FiltredTable<T> implements ITable<T> {
 
             while (tblIter.hasNext()) {
                 T candidate = tblIter.next();
-                if (filter.test(candidate)) {
+                if (callFilter(candidate)) {
                     curr = candidate;
                     return true;
                 }
@@ -114,7 +125,8 @@ public class FiltredTable<T> implements ITable<T> {
                 table.clone(),
                 filter,
                 cache,
-                cacheSize
+                cacheSize,
+                methodArgs
         );
     }
 

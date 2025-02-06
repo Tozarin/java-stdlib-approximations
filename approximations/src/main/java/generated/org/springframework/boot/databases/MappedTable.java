@@ -1,7 +1,8 @@
 package generated.org.springframework.boot.databases;
 
+import kotlin.jvm.functions.Function2;
+
 import java.util.Iterator;
-import java.util.function.Function;
 
 public class MappedTable<T, R> implements ITable<R> {
 
@@ -9,14 +10,22 @@ public class MappedTable<T, R> implements ITable<R> {
     public int size;
 
     public Class<R> type;
-    public Function<T, R> mapper;
+    public Function2<T, Object[], R> mapper;
 
-    public MappedTable(ITable<T> table, Function<T, R> mapper, Class<R> type) {
+    // arguments of original repository method
+    Object[] methodArgs;
+
+    public MappedTable(ITable<T> table, Function2<T, Object[], R> mapper, Class<R> type, Object[] methodArgs) {
 
         this.table = table;
         this.size = table.size();
         this.mapper = mapper;
         this.type = type;
+        this.methodArgs = methodArgs;
+    }
+
+    public R applyMapper(T t) {
+        return mapper.invoke(t, methodArgs);
     }
 
     @Override
@@ -44,7 +53,7 @@ public class MappedTable<T, R> implements ITable<R> {
 
         @Override
         public R next() {
-            return mapper.apply(tblIter.next());
+            return applyMapper(tblIter.next());
         }
     }
 
@@ -68,7 +77,8 @@ public class MappedTable<T, R> implements ITable<R> {
         return new MappedTable<>(
                 table.clone(),
                 mapper,
-                type
+                type,
+                methodArgs
         );
     }
 }
