@@ -142,6 +142,7 @@ public class FirstDataClass {
         return manyToManySet.contains(subclass._getId());
     }
 
+    // generated, for joined tables
     public Object[] _serilizer() {
         Object[] row = new Object[4];
         row[0] = id;

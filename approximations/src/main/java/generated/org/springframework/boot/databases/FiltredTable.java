@@ -59,10 +59,9 @@ public class FiltredTable<T> implements ITable<T> {
         int count = 0;
         while (iter.hasNext()) {
             T candidate = iter.next();
-            if (callFilter(candidate)) {
-                count++;
-                cache.add(candidate);
-            }
+            Engine.assume(callFilter(candidate));
+            cache.add(candidate);
+            count++;
         }
 
         cacheSize = count;

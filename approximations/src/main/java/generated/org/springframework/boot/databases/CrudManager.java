@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.Optional;
 import java.util.function.Function;
 
+// T - type of dataclass, V - type of id field
 public class CrudManager<T, V> {
 
     public BaseTable<V> table;
