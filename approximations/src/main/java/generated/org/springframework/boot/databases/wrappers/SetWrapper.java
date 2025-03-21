@@ -1,4 +1,7 @@
-package generated.org.springframework.boot.databases;
+package generated.org.springframework.boot.databases.wrappers;
+
+import generated.org.springframework.boot.databases.ITable;
+import generated.org.springframework.boot.databases.IWrapper;
 
 import java.lang.reflect.Array;
 import java.util.*;
@@ -7,7 +10,7 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
 
     public ITable<T> table;
     public Iterator<T> tblIter;
-    public int sizeOfTable;
+    public int sizeOfTable = -1;
     public int ptr;
     public Class<T> type;
 
@@ -19,9 +22,8 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
 
     public SetWrapper(ITable<T> table) {
 
-        this.table = table.clone();
+        this.table = table;
         this.tblIter = this.table.iterator();
-        this.sizeOfTable = table.size();
         this.ptr = 0;
         this.type = table.type();
 
@@ -32,6 +34,14 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
         this.modCount = 0;
     }
 
+    private int getSizeOfTable() {
+        if (sizeOfTable == -1) {
+            sizeOfTable = table.size();
+        }
+
+        return sizeOfTable;
+    }
+
     @Override
     public ITable<T> unwrap() {
         return table;
@@ -39,7 +49,7 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
 
     public T cacheNext() {
 
-        if (ptr == sizeOfTable) return null;
+        if (ptr == getSizeOfTable()) return null;
 
         T t = tblIter.next();
         ptr++;
@@ -65,7 +75,7 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
 
     public boolean cacheUntilCached() {
 
-        if (ptr == sizeOfTable) return false;
+        if (ptr == getSizeOfTable()) return false;
         if (cacheNext() != null) return true;
 
         return cacheUntilCached();
@@ -74,17 +84,16 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
     @Override
     public int size() {
 
-        while (ptr < sizeOfTable) {
-            cacheNext();
-        }
+        int count = 0;
+        for (T ignored : this) { count++; }
 
-        return sizeOfCache;
+        return count;
     }
 
     @Override
     public boolean isEmpty() {
 
-        if (ptr == sizeOfTable) {
+        if (ptr == getSizeOfTable()) {
             return sizeOfCache == 0;
         }
 
@@ -98,7 +107,7 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
         if (removedCache.contains(o)) return false;
         if (cache.contains(o)) return true;
 
-        if (ptr == sizeOfTable) return false;
+        if (ptr == getSizeOfTable()) return false;
 
         return cacheUntil((T) o) != null;
     }
@@ -112,7 +121,7 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
         int expectedModCount;
 
         public SetWrapperIterator() {
-            this.tblIter = table.clone().iterator();
+            this.tblIter = table.iterator();
             for (int i = 0; i < ptr; i++) {
                 tblIter.next();
             }
@@ -269,7 +278,7 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
 
         cache = newCache;
         removedCache.clear();
-        ptr = sizeOfTable;
+        ptr = getSizeOfTable();
         sizeOfCache = sizeOfNewCache;
 
         return isChanged;

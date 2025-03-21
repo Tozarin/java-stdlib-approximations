@@ -1,5 +1,6 @@
 package generated.org.springframework.boot.databases;
 
+import generated.org.springframework.boot.databases.iterators.BaseTableIterator;
 import org.jetbrains.annotations.NotNull;
 import org.usvm.api.Engine;
 import org.usvm.api.SymbolicMap;
@@ -21,6 +22,7 @@ public class BaseTable<V> implements ITable<Object[]> {
 
     public int columnCount;
     public int idIndex;
+    public Class<?>[] columnTypes;
 
     public Set<Integer> removedIx;
     public int countOfRemoved;
@@ -29,6 +31,7 @@ public class BaseTable<V> implements ITable<Object[]> {
             int idIndex,
             Class<?>... columnTypes) {
 
+        this.columnTypes = columnTypes;
         this.columnCount = columnTypes.length;
         this.idIndex = idIndex;
         this.size = Engine.makeSymbolicInt();
@@ -41,7 +44,7 @@ public class BaseTable<V> implements ITable<Object[]> {
             Engine.assume(data[i] != null);
         }
 
-        this.ids = Engine.makeSymbolicMap();
+        this.ids = Engine.makeFullySymbolicMap();
         Engine.assume(ids != null);
         Engine.assume(ids.size() == size);
 
@@ -67,6 +70,13 @@ public class BaseTable<V> implements ITable<Object[]> {
         this.countOfRemoved = countOfRemoved;
     }
 
+    public Integer getIndexFromMap(V id) {
+        Object mapId = ids.get(id);
+        Engine.assume(mapId != null);
+        Engine.assume(mapId instanceof Integer);
+        return (Integer) mapId;
+    }
+
     @Override
     public int size() {
         return size - countOfRemoved;
@@ -76,6 +86,8 @@ public class BaseTable<V> implements ITable<Object[]> {
 
         Object[] row = new Object[columnCount];
         for (int i = 0; i < columnCount; i++) {
+            Engine.assume(ix < data[i].length);
+            Engine.assume(data[i][ix] != null);
             row[i] = data[i][ix];
         }
 
@@ -88,97 +100,27 @@ public class BaseTable<V> implements ITable<Object[]> {
         Engine.assume(ix < size());
         Object[] row = getRow(ix);
         V id = (V) row[idIndex];
-        Engine.assume(ids.containsKey(id));
-        Engine.assume(ids.get(id) == ix);
 
+        //ids.set(id, ix);
+
+//        Engine.assume(ids.containsKey(id));
+//
+//        Integer mapId = getIndexFromMap(id);
+//
+//        Engine.assume(mapId == ix);
         return row;
     }
 
-    class BaseTableIterator implements Iterator<Object[]> {
-
-        int ix;
-        int endIx;
-
-        Object[] curr;
-
-        public BaseTableIterator() {
-            this.ix = 0;
-            this.endIx = size();
-
-            this.curr = null;
-        }
-
-        @Override
-        public boolean hasNext() {
-
-            if (curr != null) return true;
-
-            while (removedIx.contains(ix)) {
-                ix++;
-            }
-
-            if (endIx <= ix) return false;
-            curr = getEnsure(ix++);
-
-            return true;
-        }
-
-        @Override
-        public Object[] next() {
-            if (!hasNext()) throw new NoSuchElementException();
-
-            Object[] tmp = curr;
-            curr = null;
-
-            return tmp;
-        }
-    }
-
-    class BaseTableBackIterator implements Iterator<Object[]> {
-
-        int ix;
-
-        Object[] curr;
-
-        public BaseTableBackIterator() {
-            this.ix = size() - 1;
-            this.curr = null;
-        }
-
-        @Override
-        public boolean hasNext() {
-
-            if (curr != null) return true;
-
-            while (removedIx.contains(ix)) {
-                ix--;
-            }
-            if (ix < 0) return false;
-
-            curr = getEnsure(ix--);
-
-            return true;
-        }
-
-        @Override
-        public Object[] next() {
-            if (!hasNext()) throw new NoSuchElementException();
-
-            Object[] tmp = curr;
-            curr = null;
-
-            return tmp;
-        }
-    }
-
+    @NotNull
     @Override
     public Iterator<Object[]> iterator() {
-        return new BaseTableIterator();
+        return new BaseTableIterator<>(this);
     }
 
+    @NotNull
     @Override
     public Iterator<Object[]> backIterator() {
-        return new BaseTableBackIterator();
+        return new BaseTableIterator<>(this, true);
     }
 
     @Override
@@ -187,23 +129,16 @@ public class BaseTable<V> implements ITable<Object[]> {
     }
 
     @Override
-    public ITable<Object[]> clone() {
-        return new BaseTable<>(
-                data,
-                size,
-                ids,
-                columnCount,
-                idIndex,
-                new HashSet<>(removedIx),
-                countOfRemoved
-        );
+    public Object[] first() {
+        if (size != 0) return getEnsure(0);
+        return null;
     }
 
     @SuppressWarnings("unchecked")
     public void save(Object[] row) {
         V id = (V) row[idIndex];
         if (ids.containsKey(id)) {
-            int ix = ids.get(id);
+            int ix = getIndexFromMap(id);
             for (int i = 0; i < columnCount; i++) {
                 data[i][ix] = row[ix];
             }
@@ -229,7 +164,7 @@ public class BaseTable<V> implements ITable<Object[]> {
 
     public void deleteById(V id) {
         if (ids.containsKey(id)) {
-            int ix = ids.get(id);
+            int ix = getIndexFromMap(id);
             if (removedIx.add(ix)) countOfRemoved++;
         }
     }
@@ -262,7 +197,7 @@ public class BaseTable<V> implements ITable<Object[]> {
 
     public boolean existsById(V key) {
         if (!ids.containsKey(key)) return false;
-        int id = ids.get(key);
+        int id = getIndexFromMap(key);
         return !removedIx.contains(id);
     }
 
@@ -274,7 +209,7 @@ public class BaseTable<V> implements ITable<Object[]> {
     // need crudManager
     public Optional<Object[]> findById(V key) {
         if (!existsById(key)) return Optional.empty();
-        int id = ids.get(key);
+        int id = getIndexFromMap(key);
         return Optional.of(getRow(id));
     }
 
@@ -309,7 +244,7 @@ public class BaseTable<V> implements ITable<Object[]> {
                 public Object[] next() {
                     if (!hasNext()) throw new NoSuchElementException();
 
-                    int ix = ids.get(currKey);
+                    int ix = getIndexFromMap(currKey);
                     currKey = null;
 
                     return getRow(ix);

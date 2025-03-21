@@ -1,5 +1,8 @@
 package generated.org.springframework.boot.databases;
 
+import generated.org.springframework.boot.databases.wrappers.ListWrapper;
+import generated.org.springframework.boot.databases.wrappers.SetWrapper;
+
 import java.util.List;
 import java.util.Set;
 
@@ -14,14 +17,13 @@ public class FirstDataClass {
 
     private SecondDataClass oneToOne; // via additional field 'oneToOne_id'
 
-    private List<SecondDataClass> oneToMany; // via additional field 'oneToMany_id'
+    private List<SecondDataClass> oneToMany; // via additional field 'oneToMany_id' in SecondDataClass
     private List<SecondDataClass> oneToManyAddTable; // via additional table
 
     private SecondDataClass manyToOne; // via additional field 'manyToOne_id'
     private List<SecondDataClass> manyToMany; // via additional table
 
     private Integer oneToOne_id; // generated fields
-    private Integer oneToMany_id;
     private Set<Integer> oneToManySet; // ids for oneToMany from join table
     private Integer manyToOne_id;
     private Set<Integer> manyToManySet;
@@ -39,8 +41,7 @@ public class FirstDataClass {
     ) {
         this.id = (Integer) row[0];
         this.manyToOne_id = (Integer) row[1];
-        this.oneToMany_id = (Integer) row[2];
-        this.oneToOne_id = (Integer) row[3];
+        this.oneToOne_id = (Integer) row[2];
 
         this.oneToOne = new FiltredTable<>(oneToOneCondition, this::_oneToOneFilter, new Object[0])
                 .firstEnsure();
@@ -106,7 +107,7 @@ public class FirstDataClass {
     }
 
     public Boolean _oneToManyFilter(SecondDataClass subclass, Object[] methodArgs) {
-        return subclass._getId() == oneToMany_id;
+        return id == subclass._getOneToMany_id();
     }
 
     public Boolean _oneToManyAddTableFilter(Object[] row, Object[] methodArgs) {
@@ -144,11 +145,10 @@ public class FirstDataClass {
 
     // generated, for joined tables
     public Object[] _serilizer() {
-        Object[] row = new Object[4];
+        Object[] row = new Object[3];
         row[0] = id;
         row[1] = oneToOne_id;
-        row[2] = oneToMany_id;
-        row[3] = manyToOne_id;
+        row[2] = manyToOne_id;
         return row;
     }
 }

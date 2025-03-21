@@ -1,10 +1,12 @@
 package generated.org.springframework.boot.databases;
 
-import kotlin.jvm.functions.Function2;
+import org.jetbrains.annotations.NotNull;
+import org.usvm.api.Engine;
 
 import java.lang.reflect.Array;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.function.BiFunction;
 
 public class SortedTable<T, R> implements ITable<T> {
 
@@ -17,8 +19,8 @@ public class SortedTable<T, R> implements ITable<T> {
 
     public int tblSize;
 
-    public Function2<T, Object[], R> translate;
-    public Function2<R, R, Integer> comparer;
+    public BiFunction<T, Object[], R> translate;
+    public BiFunction<R, R, Integer> comparer;
 
     public T[] sorted;
 
@@ -32,8 +34,8 @@ public class SortedTable<T, R> implements ITable<T> {
             int offset,
             boolean direction,
             boolean nulls,
-            Function2<T, Object[], R> translate,
-            Function2<R, R, Integer> comparer,
+            BiFunction<T, Object[], R> translate,
+            BiFunction<R, R, Integer> comparer,
             Object[] methodArgs
     ) {
 
@@ -55,7 +57,7 @@ public class SortedTable<T, R> implements ITable<T> {
         }
 
         this.sorted = (T[]) Array.newInstance(table.type(), tblSize);
-        Iterator<T> tblIter = table.clone().iterator();
+        Iterator<T> tblIter = table.iterator();
         int ix = 0;
         while (tblIter.hasNext()) {
             sorted[ix++] = tblIter.next();
@@ -69,8 +71,8 @@ public class SortedTable<T, R> implements ITable<T> {
             int offset,
             boolean direction,
             boolean nulls,
-            Function2<T, Object[], R> translate,
-            Function2<R, R, Integer> comparer
+            BiFunction<T, Object[], R> translate,
+            BiFunction<R, R, Integer> comparer
     ) {
         this(table, limit, offset, direction, nulls, translate, comparer, new Object[0]);
     }
@@ -83,8 +85,8 @@ public class SortedTable<T, R> implements ITable<T> {
             boolean direction,
             boolean nulls,
             int tblSize,
-            Function2<T, Object[], R> translate,
-            Function2<R, R, Integer> comparer,
+            BiFunction<T, Object[], R> translate,
+            BiFunction<R, R, Integer> comparer,
             Object[] methodArgs,
             T[] sorted
     ) {
@@ -103,12 +105,12 @@ public class SortedTable<T, R> implements ITable<T> {
 
     public boolean compare(R left, R right) {
         if (left == null) return nulls; // NULLs always bigger or else
-        boolean common = comparer.invoke(left, right) > 0;
+        boolean common = comparer.apply(left, right) > 0;
         return common == direction;
     }
 
     public R applyTranslate(T t) {
-        return translate.invoke(t, methodArgs);
+        return translate.apply(t, methodArgs);
     }
 
     // bubble sort
@@ -180,11 +182,13 @@ public class SortedTable<T, R> implements ITable<T> {
         }
     }
 
+    @NotNull
     @Override
     public Iterator<T> iterator() {
         return new SortedIterator();
     }
 
+    @NotNull
     @Override
     public Iterator<T> backIterator() {
         return new SortedBackIterator();
@@ -196,19 +200,9 @@ public class SortedTable<T, R> implements ITable<T> {
     }
 
     @Override
-    public ITable<T> clone() {
-        return new SortedTable<>(
-                table.clone(),
-                limit,
-                offset,
-                size,
-                direction,
-                nulls,
-                tblSize,
-                translate,
-                comparer,
-                methodArgs,
-                sorted
-        );
+    public T first() {
+        Iterator<T> iter = iterator();
+        if (!iter.hasNext()) return null;
+        return iter.next();
     }
 }

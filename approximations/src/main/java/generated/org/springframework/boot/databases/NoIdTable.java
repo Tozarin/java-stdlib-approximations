@@ -1,5 +1,6 @@
 package generated.org.springframework.boot.databases;
 
+import generated.org.springframework.boot.databases.iterators.NoIdIterator;
 import org.usvm.api.Engine;
 
 import java.util.Iterator;
@@ -52,56 +53,14 @@ public class NoIdTable implements ITable<Object[]> {
         return row;
     }
 
-    class NoIdIterator implements Iterator<Object[]> {
-
-        int ix;
-        int endIx;
-
-        public NoIdIterator() {
-            this.ix = 0;
-            this.endIx = size;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return ix < endIx;
-        }
-
-        @Override
-        public Object[] next() {
-            if (!hasNext()) throw new NoSuchElementException();
-            return getRow(ix++);
-        }
-    }
-
-    class NoIdBackIterator implements Iterator<Object[]> {
-
-        int ix;
-
-        public NoIdBackIterator() {
-            this.ix = size - 1;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return 0 <= ix;
-        }
-
-        @Override
-        public Object[] next() {
-            if (!hasNext()) throw new NoSuchElementException();
-            return getRow(ix--);
-        }
-    }
-
     @Override
     public Iterator<Object[]> iterator() {
-        return new NoIdIterator();
+        return new NoIdIterator(this);
     }
 
     @Override
     public Iterator<Object[]> backIterator() {
-        return new NoIdBackIterator();
+        return new NoIdIterator(this, true);
     }
 
     @Override
@@ -110,11 +69,8 @@ public class NoIdTable implements ITable<Object[]> {
     }
 
     @Override
-    public ITable<Object[]> clone() {
-        return new NoIdTable(
-                data,
-                size,
-                columnCount
-        );
+    public Object[] first() {
+        if (size == 0) return null;
+        return getRow(0);
     }
 }

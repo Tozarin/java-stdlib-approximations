@@ -1,6 +1,9 @@
-package generated.org.springframework.boot.databases;
+package generated.org.springframework.boot.databases.wrappers;
 
-
+import generated.org.springframework.boot.databases.ITable;
+import generated.org.springframework.boot.databases.IWrapper;
+import generated.org.springframework.boot.databases.iterators.ListWrapperIterator;
+import generated.org.springframework.boot.databases.iterators.ListWrapperListIterator;
 import org.jetbrains.annotations.NotNull;
 import org.usvm.api.Engine;
 import org.usvm.api.SymbolicList;
@@ -24,9 +27,15 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
     public int wrpEndIx;
 
     public int modCount;
+    private boolean inited = false;
 
     public ListWrapper(ITable<T> table) {
-        this.table = table.clone();
+        this.table = table;
+    }
+
+    private void ensureInited() {
+        if (inited) return;
+
         int tableSize = table.size();
         this.tblStartIx = 0;
         this.tblEndIx = tableSize;
@@ -43,6 +52,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
         this.wrpEndIx = tableSize;
 
         this.modCount = 0;
+        this.inited = true;
     }
 
     public ListWrapper(
@@ -77,10 +87,10 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
     }
 
     public void checkIndex(int ix) {
-        if (ix < 0 || ix >= size()) throw new IndexOutOfBoundsException();
+        if (ix < 0 || ix >= sizeOfCache) throw new IndexOutOfBoundsException();
     }
 
-    public int findLeft(T t) {
+    private int findLeft(T t) {
 
         for (int i = 0; i < wrpStartIx; i++) {
             T cached = cache.get(i);
@@ -90,7 +100,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
         return -1;
     }
 
-    public int findLeftLast(T t) {
+    private int findLeftLast(T t) {
 
         for (int i = wrpStartIx - 1; i > -1; i--) {
             T cached = cache.get(i);
@@ -100,7 +110,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
         return -1;
     }
 
-    public int findRight(T t) {
+    private int findRight(T t) {
 
         for (int i = wrpEndIx; i < sizeOfCache; i++) {
             T cached = cache.get(i);
@@ -110,7 +120,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
         return -1;
     }
 
-    public int findRightLast(T t) {
+    private int findRightLast(T t) {
 
         for (int i = sizeOfCache - 1; i > wrpEndIx - 1; i--) {
             T cached = cache.get(i);
@@ -120,13 +130,13 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
         return -1;
     }
 
-    public int findMiddle(T t) {
+    private int findMiddle(T t) {
         T cached = cacheUntil(t);
         if (cached != null) return wrpStartIx;
         return -1;
     }
 
-    public int findMiddleLast(T t) {
+    private int findMiddleLast(T t) {
         T cached = cacheUntilBack(t);
         if (cached != null) return wrpEndIx - 1;
         return -1;
@@ -152,7 +162,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
         return prev;
     }
 
-    public T cacheUntil(T t) {
+    private T cacheUntil(T t) {
 
         T cached = cacheNext();
         while (cached != null && cached != t && !cached.equals(t)) {
@@ -161,7 +171,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
         return cached;
     }
 
-    public T cacheUntilBack(T t) {
+    private T cacheUntilBack(T t) {
 
         T cached = cachePrev();
         while (cached != null && cached != t && !cached.equals(t)) {
@@ -170,14 +180,14 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
         return cached;
     }
 
-    public void cacheUntilIx(int ix) {
+    private void cacheUntilIx(int ix) {
 
         while (wrpStartIx <= ix && wrpStartIx < wrpEndIx) {
             cacheNext();
         }
     }
 
-    public boolean removeLeft(T t) {
+    private boolean removeLeft(T t) {
 
         int ix = findLeft(t);
         if (ix != -1) {
@@ -195,7 +205,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
         return false;
     }
 
-    public boolean removeRight(T t) {
+    private boolean removeRight(T t) {
 
         int ix = findRight(t);
         if (ix != -1) {
@@ -210,7 +220,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
         return false;
     }
 
-    public boolean removeMiddle(T t) {
+    private boolean removeMiddle(T t) {
 
         T cached = cacheUntil(t);
 
@@ -231,7 +241,11 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public int size() {
-        return sizeOfCache;
+        ensureInited();
+        int count = 0;
+        for (T ignored : this) { count++; }
+
+        return count;
     }
 
     @Override
@@ -244,50 +258,19 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
         return indexOf(o) != -1;
     }
 
-    class ListWrapperIterator implements Iterator<T> {
-
-        public int ix;
-        public int count;
-
-        public int expectedModCount;
-
-        public ListWrapperIterator() {
-            this.ix = 0;
-            this.count = size();
-            this.expectedModCount = modCount;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return ix < count;
-        }
-
-        @Override
-        public T next() {
-
-            if (!hasNext()) throw new NoSuchElementException();
-            if (expectedModCount != modCount) throw new ConcurrentModificationException();
-
-            if (ix < wrpStartIx || wrpEndIx <= ix) return cache.get(ix++);
-
-            assert (ix == wrpStartIx);
-            cacheNext();
-
-            return cache.get(ix++);
-        }
-    }
-
     @NotNull
     @Override
     public Iterator<T> iterator() {
-        return new ListWrapperIterator();
+        ensureInited();
+        return new ListWrapperIterator<>(this);
     }
 
     @NotNull
     @Override
     public Object[] toArray() {
+        ensureInited();
 
-        Object[] a = new Object[size()];
+        Object[] a = new Object[sizeOfCache];
 
         int ix = 0;
         for (T t : this) a[ix++] = t;
@@ -299,13 +282,14 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
     @Override
     @SuppressWarnings("unchecked")
     public <T1> T1[] toArray(@NotNull T1[] a) {
+        ensureInited();
 
         Class<?> genericType = a.getClass().componentType();
 
         //if (!genericType.isAssignableFrom(type)) throw new ArrayStoreException();
 
-        T1[] array = a.length < size() ?
-                (T1[]) Array.newInstance(genericType, size())
+        T1[] array = a.length < sizeOfCache ?
+                (T1[]) Array.newInstance(genericType, sizeOfCache)
                 : a;
         Iterator<T> iter = iterator();
 
@@ -319,6 +303,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public boolean add(T t) {
+        ensureInited();
 
         cache.insert(sizeOfCache, t);
         sizeOfCache++;
@@ -329,6 +314,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public boolean remove(Object o) {
+        ensureInited();
 
         if (o == null) throw new NullPointerException();
         if (!type.isInstance(o)) throw new ClassCastException();
@@ -343,6 +329,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public boolean containsAll(@NotNull Collection<?> c) {
+        ensureInited();
 
         for (Object o : c) if (!contains(o)) return false;
 
@@ -351,6 +338,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public boolean addAll(@NotNull Collection<? extends T> c) {
+        ensureInited();
 
         if (c.isEmpty()) return false;
 
@@ -362,6 +350,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public boolean addAll(int index, @NotNull Collection<? extends T> c) {
+        ensureInited();
 
         checkIndex(index);
 
@@ -382,6 +371,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public boolean removeAll(@NotNull Collection<?> c) {
+        ensureInited();
 
         if (c.isEmpty()) return false;
 
@@ -395,6 +385,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public boolean retainAll(@NotNull Collection<?> c) {
+        ensureInited();
 
         SymbolicList<T> newCache = Engine.makeSymbolicList();
         int newSize = 0;
@@ -402,12 +393,12 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
         Engine.assume(newCache.size() == 0);
 
         cacheUntilIx(wrpEndIx);
-        for (int i = 0; i < size(); i++) {
+        for (int i = 0; i < sizeOfCache; i++) {
             T t = cache.get(i);
             if (c.contains(t)) newCache.insert(newSize++, t);
         }
 
-        if (newSize == size()) return false;
+        if (newSize == sizeOfCache) return false;
 
         cache = newCache;
         sizeOfCache = newSize;
@@ -438,6 +429,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public T get(int index) {
+        ensureInited();
 
         checkIndex(index);
 
@@ -450,6 +442,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public T set(int index, T element) {
+        ensureInited();
 
         checkIndex(index);
 
@@ -462,6 +455,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public void add(int index, T element) {
+        ensureInited();
 
         checkIndex(index);
 
@@ -481,6 +475,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public T remove(int index) {
+        ensureInited();
 
         checkIndex(index);
 
@@ -503,6 +498,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public int indexOf(Object o) {
+        ensureInited();
 
         if (o == null) throw new NullPointerException();
         if (!type.isInstance(o)) throw new ClassCastException();
@@ -520,6 +516,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public int lastIndexOf(Object o) {
+        ensureInited();
 
         if (o == null) throw new NullPointerException();
         if (!type.isInstance(o)) throw new ClassCastException();
@@ -535,131 +532,26 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
         return findLeftLast(t);
     }
 
-    class ListWrapperListIterator implements ListIterator<T> {
-
-        public int ix;
-        public int lastReturnedIx;
-
-        public int expectedModCount;
-
-        public ListWrapperListIterator(int ix) {
-            this.ix = ix;
-            this.lastReturnedIx = -1;
-            this.expectedModCount = modCount;
-        }
-
-        public void concModificationCheck() {
-            if (expectedModCount != modCount) throw new ConcurrentModificationException();
-        }
-
-        @Override
-        public boolean hasNext() {
-            return ix < size();
-        }
-
-        @Override
-        public T next() {
-
-            if (!hasNext()) throw new NoSuchElementException();
-            concModificationCheck();
-
-            lastReturnedIx = ix;
-
-            if (ix < wrpStartIx || wrpEndIx <= ix) return cache.get(ix++);
-
-            assert (ix == wrpStartIx);
-            cacheNext();
-
-            return cache.get(ix++);
-        }
-
-        @Override
-        public boolean hasPrevious() {
-            return 0 < ix;
-        }
-
-        @Override
-        public T previous() {
-
-            if (!hasPrevious()) throw new NoSuchElementException();
-            concModificationCheck();
-
-            lastReturnedIx = ix - 1;
-
-            if (ix <= wrpStartIx || wrpEndIx < ix) return cache.get(--ix);
-
-            assert (ix == wrpEndIx - 1);
-            cachePrev();
-
-            return cache.get(--ix);
-        }
-
-        @Override
-        public int nextIndex() {
-            return ix;
-        }
-
-        @Override
-        public int previousIndex() {
-            return ix - 1;
-        }
-
-        @Override
-        public void remove() {
-
-            if (lastReturnedIx == -1) throw new IllegalStateException();
-            concModificationCheck();
-
-            ListWrapper.this.remove(lastReturnedIx);
-            expectedModCount++;
-            ix = lastReturnedIx;
-
-            lastReturnedIx = -1;
-        }
-
-        @Override
-        public void set(T t) {
-
-            if (lastReturnedIx == -1) throw new IllegalStateException();
-            concModificationCheck();
-
-            ListWrapper.this.set(lastReturnedIx, t);
-            expectedModCount++;
-
-            lastReturnedIx = -1;
-        }
-
-        @Override
-        public void add(T t) {
-
-            if (lastReturnedIx == -1) throw new IllegalStateException();
-            concModificationCheck();
-
-            ListWrapper.this.add(lastReturnedIx + 1, t);
-            expectedModCount++;
-            ix++;
-
-            lastReturnedIx = -1;
-        }
-    }
-
     @NotNull
     @Override
     public ListIterator<T> listIterator() {
-        return new ListWrapperListIterator(0);
+        ensureInited();
+        return new ListWrapperListIterator<>(this, 0);
     }
 
     @NotNull
     @Override
     public ListIterator<T> listIterator(int index) {
-        return new ListWrapperListIterator(index);
+        ensureInited();
+        return new ListWrapperListIterator<>(this, index);
     }
 
     @NotNull
     @Override
     public List<T> subList(int fromIndex, int toIndex) {
+        ensureInited();
 
-        if (fromIndex < 0 || toIndex > size() || fromIndex > toIndex) throw new IndexOutOfBoundsException();
+        if (fromIndex < 0 || toIndex > sizeOfCache || fromIndex > toIndex) throw new IndexOutOfBoundsException();
 
         int newSize = toIndex - fromIndex;
 
@@ -680,10 +572,10 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
         for (int i = 0; i < tblStartIx; i++) newTblIter.next();
 
         Iterator<T> newBackTblIter = table.backIterator();
-        for (int i = size() - 1; tblEndIx <= i; i--) newBackTblIter.next();
+        for (int i = sizeOfCache - 1; tblEndIx <= i; i--) newBackTblIter.next();
 
         return new ListWrapper<>(
-                table.clone(),
+                table,
                 newTblStartIx,
                 newTblEndIx,
                 type,
@@ -698,8 +590,6 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
     }
 
     public T first() {
-        Iterator<T> iter = iterator();
-        if (!iter.hasNext()) return null;
-        return iter.next();
+        return table.first();
     }
 }

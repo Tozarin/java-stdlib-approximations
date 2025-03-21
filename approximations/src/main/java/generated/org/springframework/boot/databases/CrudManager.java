@@ -1,6 +1,7 @@
 package generated.org.springframework.boot.databases;
 
 import org.jetbrains.annotations.NotNull;
+import org.usvm.api.Engine;
 
 import java.util.Iterator;
 import java.util.Optional;

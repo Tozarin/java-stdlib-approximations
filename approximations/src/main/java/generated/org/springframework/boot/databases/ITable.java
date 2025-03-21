@@ -10,5 +10,5 @@ public interface ITable<T> extends Iterable<T> {
 
     Class<T> type();
 
-    ITable<T> clone();
+    T first();
 }

@@ -1,10 +1,11 @@
 package generated.org.springframework.boot.databases;
 
+import generated.org.springframework.boot.databases.iterators.JoinedIterator;
+import org.jetbrains.annotations.NotNull;
 import org.usvm.api.Engine;
 import runtime.LibSLRuntime;
 
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -99,14 +100,20 @@ public class JoinedTable<L, R> implements ITable<Object[]> {
     // r is null when isLeft and onMethod is false for all rs
     public Object[] composite(L l, R r) {
 
-        Object[] lRow = serializeLeft(l);
-        Object[] rRow = serializeRight(r);
+        if (l != null && r != null) {
 
-        Object[] row = new Object[lRow.length + rRow.length];
-        LibSLRuntime.ArrayActions.copy(lRow, 0, row, 0, lRow.length);
-        LibSLRuntime.ArrayActions.copy(rRow, 0, row, lRow.length, rRow.length);
+            Object[] lRow = serializeLeft(l);
+            Object[] rRow = serializeRight(r);
 
-        return row;
+            Object[] row = new Object[lRow.length + rRow.length];
+
+            for (int i = 0; i < lRow.length; i++) row[i] = lRow[i];
+            for (int i = 0; i < rRow.length; i++) row[i + lRow.length] = rRow[i];
+
+            return row;
+        }
+
+        return null;
     }
 
     public int size() {
@@ -117,7 +124,7 @@ public class JoinedTable<L, R> implements ITable<Object[]> {
             return size;
         }
 
-        Iterator<Object[]> iter = new JoinedIterator();
+        Iterator<Object[]> iter = new JoinedIterator<>(this);
         int count = 0;
         while (iter.hasNext()) {
             Object[] candidate = iter.next();
@@ -129,106 +136,30 @@ public class JoinedTable<L, R> implements ITable<Object[]> {
         return size;
     }
 
-    class JoinedIterator implements Iterator<Object[]> {
-
-        Iterator<L> leftIter;
-        Iterator<R> rightIter;
-
-        L currLeft;
-        Object[] currComposited;
-
-        boolean reversed;
-        boolean isEmpty;
-        boolean findedRight;
-
-        public JoinedIterator() {
-            this(false);
-        }
-
-        public JoinedIterator(boolean reversed) {
-            this.reversed = reversed;
-            this.findedRight = false;
-
-            resetLeftIter();
-            resetRightIter();
-
-            this.isEmpty = !leftIter.hasNext() && !rightIter.hasNext();
-
-            this.currLeft = isEmpty ? null : leftIter.next();
-            this.currComposited = null;
-        }
-
-        private void resetLeftIter() {
-            leftIter = reversed ? leftTable.clone().backIterator() : leftTable.clone().iterator();
-        }
-
-        private void resetRightIter() {
-            rightIter = reversed ? rightTable.clone().backIterator() : rightTable.clone().iterator();
-        }
-
-        @Override
-        public boolean hasNext() {
-            if (isEmpty) return false;
-            if (currComposited != null) return true;
-
-            while (rightIter.hasNext()) {
-                R right = rightIter.next();
-                Object[] candidate = composite(currLeft, right);
-                if (applyPredicate(candidate)) {
-                    findedRight = true;
-                    currComposited = candidate;
-                    return true;
-                }
-            }
-
-            if (isLeft && !findedRight) {
-                findedRight = true;
-                currComposited = composite(currLeft, null);
-                return true;
-            }
-
-            if (!leftIter.hasNext()) return false;
-
-            resetRightIter();
-            currLeft = leftIter.next();
-            findedRight = false;
-
-            return hasNext();
-        }
-
-        @Override
-        public Object[] next() {
-            if (!hasNext()) throw new NoSuchElementException();
-
-            Object[] tmp = currComposited;
-            currComposited = null;
-            return tmp;
-        }
-    }
-
+    @NotNull
+    @Override
     public Iterator<Object[]> iterator() {
-        return new JoinedIterator();
+        return new JoinedIterator<>(this);
     }
 
+    @NotNull
+    @Override
     public Iterator<Object[]> backIterator() {
-        return new JoinedIterator(true);
+        return new JoinedIterator<>(this, true);
     }
 
+    @Override
     public Class<Object[]> type() {
         return Object[].class;
     }
 
-    public ITable<Object[]> clone() {
-        return new JoinedTable<>(
-                size,
-                leftTable.clone(),
-                rightTable.clone(),
-                leftSerializer,
-                rightSerializer,
-                rightSize,
-                onMethod,
-                isLeft
-        );
+    @Override
+    public Object[] first() {
+        if (onMethod == null) return composite(leftTable.first(), rightTable.first());
+
+        Iterator<Object[]> iter = iterator();
+        if (!iter.hasNext()) return null;
+        return iter.next();
     }
 
     public static Object[] identity(Object[] row) {

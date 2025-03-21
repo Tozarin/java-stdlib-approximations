@@ -1,5 +1,7 @@
 package generated.org.springframework.boot.databases;
 
+import org.usvm.api.Engine;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDateTime;
@@ -15,10 +17,14 @@ public class Utils {
     static Integer comparer(BigDecimal left, BigDecimal right) { return left.compareTo(right); }
     static Integer comparer(LocalDateTime left, LocalDateTime right) { return left.compareTo(right); }
 
-    public static boolean equals(Object left, Object right) {
-        return left.equals(right) || left == right;
+    static Boolean equals(Integer left, Integer right) {
+
+        if (left != null) if (right != null) return (int) left == (int) right;
+
+        return false;
     }
 
+    //static Boolean equals(Object left, Object right) { return left.equals(right); }
 
     // https://stackoverflow.com/a/54437062
     public static boolean like(String expr, String pattern, String esc, boolean caseSenc) {

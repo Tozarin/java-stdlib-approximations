@@ -1,5 +1,7 @@
 package generated.org.springframework.boot.databases;
 
+import generated.org.springframework.boot.databases.wrappers.ListWrapper;
+
 import java.util.List;
 
 public class SecondDataClass {
@@ -14,10 +16,20 @@ public class SecondDataClass {
     private List<FirstDataClass> subclasses;
 
     private Integer subclasses_id;
+    private Integer oneToMany_id;
+
+    public Integer _getOneToMany_id() {
+        return oneToMany_id;
+    }
+
+    public static SecondDataClass foo(Object[] row) {
+        return new SecondDataClass(row, null);
+    }
 
     public SecondDataClass(Object[] row, ITable<FirstDataClass> subclassesCondition) {
         this.id = (Integer) row[0];
         this.subclasses_id = (Integer) row[1];
+        this.oneToMany_id = (Integer) row[2];
 
         this.subclasses = new ListWrapper<>(
                 new FiltredTable<>(

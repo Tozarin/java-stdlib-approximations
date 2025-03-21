@@ -1,5 +1,9 @@
 package generated.org.springframework.boot.databases;
 
+import generated.org.springframework.boot.databases.iterators.DistinctIterator;
+import org.jetbrains.annotations.NotNull;
+import org.usvm.api.Engine;
+
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -13,9 +17,7 @@ public class DistinctTable<T> implements ITable<T> {
     public int cacheSize;
 
     public DistinctTable(ITable<T> table) {
-
         this.table = table;
-
         this.cache = new HashSet<>();
         this.cacheSize = -1;
     }
@@ -31,7 +33,7 @@ public class DistinctTable<T> implements ITable<T> {
 
         if (cacheSize != -1) return cacheSize;
 
-        Iterator<T> iter = new DistinctIterator();
+        Iterator<T> iter = new DistinctIterator<>(table);
         int count = 0;
         while (iter.hasNext()) {
             if (cache.add(iter.next())) count++;
@@ -41,61 +43,17 @@ public class DistinctTable<T> implements ITable<T> {
         return cacheSize;
     }
 
-    class DistinctIterator implements Iterator<T> {
-
-        Iterator<T> tblIter;
-        T curr;
-
-        Set<T> cache;
-
-        public DistinctIterator(Iterator<T> tblIter) {
-            this.tblIter = tblIter;
-            this.curr = null;
-            this.cache = new HashSet<>();
-        }
-
-        public DistinctIterator() {
-            this.tblIter = table.clone().iterator();
-            this.curr = null;
-            this.cache = new HashSet<>();
-        }
-
-        @Override
-        public boolean hasNext() {
-
-            if (curr != null) return true;
-
-            while (tblIter.hasNext()) {
-                T candidate = tblIter.next();
-                if (cache.add(candidate)) {
-                    curr = candidate;
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        @Override
-        public T next() {
-            if (!hasNext()) throw new NoSuchElementException();
-
-            T tmp = curr;
-            curr = null;
-
-            return tmp;
-        }
-    }
-
+    @NotNull
     @Override
     public Iterator<T> iterator() {
         if (cacheSize != -1) return cache.iterator();
-        return new DistinctIterator();
+        return new DistinctIterator<>(table);
     }
 
+    @NotNull
     @Override
     public Iterator<T> backIterator() {
-        return new DistinctIterator(table.clone().backIterator());
+        return new DistinctIterator<>(table, true);
     }
 
     @Override
@@ -104,11 +62,9 @@ public class DistinctTable<T> implements ITable<T> {
     }
 
     @Override
-    public ITable<T> clone() {
-        return new DistinctTable<>(
-                table.clone(),
-                cache,
-                cacheSize
-        );
+    public T first() {
+        Iterator<T> iter = iterator();
+        if (!iter.hasNext()) return null;
+        return iter.next();
     }
 }
