@@ -1,7 +1,8 @@
 package generated.org.springframework.boot.databases.wrappers;
 
 import generated.org.springframework.boot.databases.ITable;
-import generated.org.springframework.boot.databases.IWrapper;
+import generated.org.springframework.boot.databases.iterators.wrappers.SetWrapperIterator;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Array;
 import java.util.*;
@@ -112,68 +113,10 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
         return cacheUntil((T) o) != null;
     }
 
-    class SetWrapperIterator implements Iterator<T> {
-
-        Iterator<T> tblIter;
-        Iterator<T> cacheIter;
-        T curr;
-
-        int expectedModCount;
-
-        public SetWrapperIterator() {
-            this.tblIter = table.iterator();
-            for (int i = 0; i < ptr; i++) {
-                tblIter.next();
-            }
-
-            this.cacheIter = cache.iterator();
-            this.curr = null;
-            this.expectedModCount = modCount;
-        }
-
-        @Override
-        public boolean hasNext() {
-
-            if (curr != null) return true;
-
-            if (cacheIter.hasNext()) {
-                T candidate = cacheIter.next();
-                if (removedCache.contains(candidate)) {
-                    return hasNext();
-                }
-
-                curr = candidate;
-                return true;
-            }
-
-            if (tblIter.hasNext()) {
-                T candidate = tblIter.next();
-                if (removedCache.contains(candidate) || cache.contains(candidate)) {
-                    return hasNext();
-                }
-
-                curr = candidate;
-                return true;
-            }
-
-            return false;
-        }
-
-        @Override
-        public T next() {
-            if (!hasNext()) throw new NoSuchElementException();
-            if (expectedModCount != modCount) throw new ConcurrentModificationException();
-
-            T tmp = curr;
-            curr = null;
-
-            return tmp;
-        }
-    }
-
+    @NotNull
     @Override
     public Iterator<T> iterator() {
-        return new SetWrapperIterator();
+        return new SetWrapperIterator<>(this);
     }
 
     @Override
@@ -266,7 +209,6 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
                 newCache.add((T) o);
                 sizeOfNewCache++;
             }
-            ;
         }
 
         boolean isChanged = false;

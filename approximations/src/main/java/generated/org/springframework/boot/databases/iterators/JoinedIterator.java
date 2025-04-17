@@ -85,7 +85,7 @@ public class JoinedIterator<L, R> implements Iterator<Object[]> {
 
     @Override
     public Object[] next() {
-        if (!hasNext()) throw new NoSuchElementException();
+        Engine.assume(hasNext());
 
         Object[] tmp = currComposited;
         currComposited = null;

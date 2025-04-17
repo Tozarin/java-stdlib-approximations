@@ -1,6 +1,7 @@
 package generated.org.springframework.boot.databases.iterators;
 
 import generated.org.springframework.boot.databases.ITable;
+import org.usvm.api.Engine;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -42,7 +43,7 @@ public class DistinctIterator<T> implements Iterator<T> {
 
     @Override
     public T next() {
-        if (!hasNext()) throw new NoSuchElementException();
+        Engine.assume(hasNext());
 
         T tmp = curr;
         curr = null;

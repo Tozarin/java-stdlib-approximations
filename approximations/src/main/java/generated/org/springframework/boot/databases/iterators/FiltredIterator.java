@@ -2,15 +2,15 @@ package generated.org.springframework.boot.databases.iterators;
 
 import generated.org.springframework.boot.databases.FiltredTable;
 import generated.org.springframework.boot.databases.ITable;
+import org.usvm.api.Engine;
 
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 
 public class FiltredIterator<T> implements Iterator<T> {
 
-    FiltredTable<T> filtredTable;
-    Iterator<T> tblIter;
-    T curr;
+    public FiltredTable<T> filtredTable;
+    public Iterator<T> tblIter;
+    public T curr;
 
     public FiltredIterator(FiltredTable<T> filtredTable, boolean reversed) {
         this.filtredTable = filtredTable;
@@ -37,7 +37,7 @@ public class FiltredIterator<T> implements Iterator<T> {
 
     @Override
     public T next() {
-        if (!hasNext()) throw new NoSuchElementException();
+        Engine.assume(hasNext());
 
         T tmp = curr;
         curr = null;

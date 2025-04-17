@@ -22,7 +22,7 @@ public class SortedTable<T, R> implements ITable<T> {
     public BiFunction<T, Object[], R> translate;
     public BiFunction<R, R, Integer> comparer;
 
-    public T[] sorted;
+    public Object[] sorted;
 
     // arguments of original repository method
     Object[] methodArgs;
@@ -56,7 +56,8 @@ public class SortedTable<T, R> implements ITable<T> {
             this.size = Math.min(tblSize - offset, limit);
         }
 
-        this.sorted = (T[]) Array.newInstance(table.type(), tblSize);
+        //this.sorted = (T[]) Array.newInstance(table.type(), tblSize);
+        this.sorted = new Object[tblSize];
         Iterator<T> tblIter = table.iterator();
         int ix = 0;
         while (tblIter.hasNext()) {
@@ -114,17 +115,18 @@ public class SortedTable<T, R> implements ITable<T> {
     }
 
     // bubble sort
+    @SuppressWarnings("unchecked")
     public void Sort() {
         for (int i = 0; i < tblSize; i++) {
             boolean swapped = false;
             for (int j = 0; j < tblSize - i - 1; j++) {
 
-                R left = applyTranslate(sorted[j]);
-                R right = applyTranslate(sorted[j + 1]);
+                R left = applyTranslate((T) sorted[j]);
+                R right = applyTranslate((T) sorted[j + 1]);
 
                 if (compare(left, right)) {
 
-                    T tmp = sorted[j];
+                    T tmp = (T) sorted[j];
                     sorted[j] = sorted[j + 1];
                     sorted[j + 1] = tmp;
 
@@ -156,9 +158,10 @@ public class SortedTable<T, R> implements ITable<T> {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public T next() {
             if (!hasNext()) throw new NoSuchElementException();
-            return sorted[ix++];
+            return (T) sorted[ix++];
         }
     }
 
@@ -176,9 +179,10 @@ public class SortedTable<T, R> implements ITable<T> {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public T next() {
             if (!hasNext()) throw new NoSuchElementException();
-            return sorted[ix--];
+            return (T) sorted[ix--];
         }
     }
 

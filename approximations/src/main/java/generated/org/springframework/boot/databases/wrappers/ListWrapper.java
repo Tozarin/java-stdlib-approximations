@@ -1,9 +1,8 @@
 package generated.org.springframework.boot.databases.wrappers;
 
 import generated.org.springframework.boot.databases.ITable;
-import generated.org.springframework.boot.databases.IWrapper;
-import generated.org.springframework.boot.databases.iterators.ListWrapperIterator;
-import generated.org.springframework.boot.databases.iterators.ListWrapperListIterator;
+import generated.org.springframework.boot.databases.iterators.wrappers.ListWrapperIterator;
+import generated.org.springframework.boot.databases.iterators.wrappers.ListWrapperListIterator;
 import org.jetbrains.annotations.NotNull;
 import org.usvm.api.Engine;
 import org.usvm.api.SymbolicList;
@@ -44,7 +43,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
         this.tblIter = this.table.iterator();
         this.backTblIter = this.table.backIterator();
 
-        this.cache = Engine.makeSymbolicList();
+        this.cache = Engine.makeFullySymbolicList();
         Engine.assume(cache != null);
         Engine.assume(cache.size() == tableSize);
         this.sizeOfCache = tableSize;
@@ -66,7 +65,8 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
             int sizeOfCache,
             int wrpStartIx,
             int wrpEndIx,
-            int modCount
+            int modCount,
+            boolean inited
     ) {
         this.table = table;
         this.tblStartIx = tblStartIx;
@@ -79,6 +79,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
         this.wrpStartIx = wrpStartIx;
         this.wrpEndIx = wrpEndIx;
         this.modCount = modCount;
+        this.inited = inited;
     }
 
     @Override
@@ -387,7 +388,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
     public boolean retainAll(@NotNull Collection<?> c) {
         ensureInited();
 
-        SymbolicList<T> newCache = Engine.makeSymbolicList();
+        SymbolicList<T> newCache = Engine.makeFullySymbolicList();
         int newSize = 0;
         Engine.assume(newCache != null);
         Engine.assume(newCache.size() == 0);
@@ -415,7 +416,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
     @Override
     public void clear() {
 
-        cache = Engine.makeSymbolicList();
+        cache = Engine.makeFullySymbolicList();
         Engine.assume(cache != null);
         Engine.assume(cache.size() == 0);
         sizeOfCache = 0;
@@ -555,7 +556,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
         int newSize = toIndex - fromIndex;
 
-        SymbolicList<T> newCache = Engine.makeSymbolicList();
+        SymbolicList<T> newCache = Engine.makeFullySymbolicList();
         Engine.assume(newCache != null);
         cache.copy(newCache, fromIndex, 0, newSize);
 
@@ -585,7 +586,8 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
                 newSize,
                 newWrpStartIx,
                 newWrpEndIx,
-                0
+                0,
+                false
         );
     }
 

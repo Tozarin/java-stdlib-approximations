@@ -48,7 +48,7 @@ public class FlatIterator<T> implements Iterator<T> {
 
     @Override
     public T next() {
-        if (!hasNext()) throw new NoSuchElementException();
+        Engine.assume(hasNext());
         return currIter.next();
     }
 }
