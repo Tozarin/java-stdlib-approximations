@@ -19,7 +19,7 @@ public class RangeDeletedNoIdTableIterator implements Iterator<Object[]> {
 
     public RangeDeletedNoIdTableIterator(RangeDeletedNoIdTable table) {
         this.table = table;
-        this.tableIter = new IteratorWithFilter<>(table.iterator(), table.predicate);
+        this.tableIter = new IteratorWithFilter<>(table.table.iterator(), table.predicate);
         this.savedRowsCopy = Engine.makeSymbolicMap();
         savedRowsCopy.merge(table.savedRows);
 

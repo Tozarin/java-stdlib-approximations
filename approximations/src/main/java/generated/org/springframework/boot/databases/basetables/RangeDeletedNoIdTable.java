@@ -9,6 +9,7 @@ import org.usvm.api.internal.SymbolicMapImpl;
 import java.util.Iterator;
 import java.util.function.Function;
 
+// TODO [REWRITE]:
 public class RangeDeletedNoIdTable extends AChainedNoIdTable {
 
     public SymbolicMap<Object[], Boolean> savedRows;
@@ -34,12 +35,6 @@ public class RangeDeletedNoIdTable extends AChainedNoIdTable {
 
     @Override
     public Iterator<Object[]> backIterator() { return new RangeDeletedNoIdTableIterator(this); }
-
-    @Override
-    public void save(Object[] row) { savedRows.set(row, true); }
-
-    @Override
-    public void delete(Object[] row) { savedRows.set(row, false); }
 
     @Override
     public void deleteAll() {

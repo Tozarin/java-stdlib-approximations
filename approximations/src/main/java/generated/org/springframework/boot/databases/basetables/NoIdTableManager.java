@@ -41,10 +41,10 @@ public class NoIdTableManager extends ANoIdTable implements ITableManager {
     public Class<?>[] columnTypes() { return tablesChain.columnTypes(); }
 
     @Override
-    public void save(Object[] row) { tablesChain.save(row); }
+    public void save(Object[] row) { tablesChain = new NoIdTableSave(tablesChain, row); }
 
     @Override
-    public void delete(Object[] row) { tablesChain.delete(row); }
+    public void delete(Object[] row) { tablesChain = new NoIdTableDelete(tablesChain, row); }
 
     @Override
     public void deleteAll() { tablesChain.deleteAll(); }

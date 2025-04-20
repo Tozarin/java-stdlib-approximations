@@ -1,6 +1,5 @@
 package generated.org.springframework.boot.databases.basetables;
 
-import generated.org.springframework.boot.databases.iterators.utils.FindAllByIdIterator;
 import generated.org.springframework.boot.databases.iterators.basetables.RangeDeletedTableIterator;
 import org.jetbrains.annotations.NotNull;
 import org.usvm.api.Engine;
@@ -11,6 +10,7 @@ import java.util.Iterator;
 import java.util.Optional;
 import java.util.function.Function;
 
+// TODO [REWRITE]:
 public class RangeDeletedTable<V> extends AChainedBaseTable<V> {
 
     public SymbolicMap<V, Object[]> savedRows; // value is row
@@ -48,19 +48,6 @@ public class RangeDeletedTable<V> extends AChainedBaseTable<V> {
     public Iterator<Object[]> backIterator() { return new RangeDeletedTableIterator<>(this, true); }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public void save(Object[] row) {
-        V id = (V) row[idColumnIx()];
-
-        if (!existsById(id)) saveOrder.set(currSaveIx++, id);
-
-        Object[] oldRow = savedRows.get(id);
-        Object[] merged = mergeRows(oldRow, row);
-        savedRows.set(id, merged);
-        savedRowsStatus.set(id, true);
-    }
-
-    @Override
     public void deleteAll() {
         table.deleteAll();
         savedRows = Engine.makeSymbolicMap();
@@ -68,18 +55,6 @@ public class RangeDeletedTable<V> extends AChainedBaseTable<V> {
         saveOrder = Engine.makeSymbolicMap();
         currSaveIx = 0;
     }
-
-    @Override
-    public void deleteById(V id) {
-        Optional<Object[]> row = findById(id);
-        if (row.isPresent()) {
-            savedRows.set(id, row.get());
-            savedRowsStatus.set(id, false);
-        }
-    }
-
-    @Override
-    public boolean existsById(V id) { return findById(id).isPresent(); }
 
     @Override
     public Optional<Object[]> findById(V id) {
@@ -94,21 +69,4 @@ public class RangeDeletedTable<V> extends AChainedBaseTable<V> {
         return Optional.empty();
     }
 
-    @Override
-    public Iterable<Object[]> findAllById(Iterable<V> keys) {
-        class FindAllByIdIterable implements Iterable<Object[]> {
-
-            public RangeDeletedTable<V> table;
-
-            public FindAllByIdIterable(RangeDeletedTable<V> table) { this.table = table; }
-
-            @NotNull
-            @Override
-            public Iterator<Object[]> iterator() {
-                return new FindAllByIdIterator<>(table, keys);
-            }
-        }
-
-        return new FindAllByIdIterable(this);
-    }
 }

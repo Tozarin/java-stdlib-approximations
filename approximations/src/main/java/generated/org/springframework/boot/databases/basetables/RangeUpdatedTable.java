@@ -1,6 +1,5 @@
 package generated.org.springframework.boot.databases.basetables;
 
-import generated.org.springframework.boot.databases.iterators.utils.FindAllByIdIterator;
 import generated.org.springframework.boot.databases.iterators.basetables.RangeUpdatedTableIterator;
 import org.jetbrains.annotations.NotNull;
 import org.usvm.api.Engine;
@@ -55,22 +54,6 @@ public class RangeUpdatedTable<V> extends AChainedBaseTable<V> {
     public Iterator<Object[]> backIterator() { return new RangeUpdatedTableIterator<>(this, true); }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public void save(Object[] row) {
-        V id = (V) row[idColumnIx()];
-
-        if (!existsById(id)) {
-            saveOrder.set(currSaveIx++, id);
-            currSize++;
-        }
-
-        Object[] oldRow = savedRows.get(id);
-        Object[] merged = mergeRows(oldRow, row);
-        savedRows.set(id, merged);
-        savedRowsStatus.set(id, true);
-    }
-
-    @Override
     public void deleteAll() {
         table.deleteAll();
         currSize = 0;
@@ -79,19 +62,6 @@ public class RangeUpdatedTable<V> extends AChainedBaseTable<V> {
         saveOrder = Engine.makeSymbolicMap();
         currSaveIx = 0;
     }
-
-    @Override
-    public void deleteById(V id) {
-        Optional<Object[]> row = findById(id);
-        if (row.isPresent()) {
-            savedRows.set(id, row.get());
-            savedRowsStatus.set(id, false);
-            currSize--;
-        }
-    }
-
-    @Override
-    public boolean existsById(V id) { return findById(id).isPresent(); }
 
     @Override
     @SuppressWarnings("unchecked")
@@ -113,23 +83,5 @@ public class RangeUpdatedTable<V> extends AChainedBaseTable<V> {
         }
 
         return Optional.empty();
-    }
-
-    @Override
-    public Iterable<Object[]> findAllById(Iterable<V> keys) {
-        class FindAllByIdIterable implements Iterable<Object[]> {
-
-            public RangeUpdatedTable<V> table;
-
-            public FindAllByIdIterable(RangeUpdatedTable<V> table) { this.table = table; }
-
-            @NotNull
-            @Override
-            public Iterator<Object[]> iterator() {
-                return new FindAllByIdIterator<>(table, keys);
-            }
-        }
-
-        return new FindAllByIdIterable(this);
     }
 }

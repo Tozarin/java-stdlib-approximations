@@ -36,9 +36,8 @@ public class CrudManager<T, V> {
     // allowUpdate - may or not update given entity in database
     public void save(T t, boolean allowUpdate) {
         Object[] row = serializer.apply(t);
-        V id = (V) row[table.idColumnIx()];
 
-        if (!allowUpdate && existById(id)) return;
+        if (!allowUpdate) table.pureSave(row);
 
         table.save(row);
     }
@@ -67,14 +66,6 @@ public class CrudManager<T, V> {
         }
     }
 
-    public void deleteAllById(Iterable<? extends V> keys) {
-        table.deleteAllById(keys);
-    }
-
-    public boolean existById(V key) {
-        return table.existsById(key);
-    }
-
     // It is important that names of following template
     // [name of repository method]_[return type where "." replaced with "_"]
     public Iterable<T> findAll_java_lang_Iterable() {
@@ -98,10 +89,6 @@ public class CrudManager<T, V> {
 
     public Optional<T> findById_java_util_Optional(V key) {
         return table.findById(key).map(deserializer);
-    }
-
-    public Iterable<T> findAllById(Iterable<V> keys) {
-        return new IterableWithMap<>(table.findAllById(keys), deserializer);
     }
 
     class IterableWithMap<I, R> implements Iterable<R> {

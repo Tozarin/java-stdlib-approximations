@@ -9,6 +9,7 @@ import org.usvm.api.internal.SymbolicMapImpl;
 import java.util.Iterator;
 import java.util.function.Function;
 
+// TODO [REWRITE]:
 public class RangeUpdatedNoIdTable extends AChainedNoIdTable {
 
     // key - row
@@ -48,12 +49,6 @@ public class RangeUpdatedNoIdTable extends AChainedNoIdTable {
     public Iterator<Object[]> backIterator() {
         return new RangeUpdatedNoIdTableIterator(this);
     }
-
-    @Override
-    public void save(Object[] row) { savedRows.set(row, true); }
-
-    @Override
-    public void delete(Object[] row) { savedRows.set(row, false); }
 
     @Override
     public void deleteAll() {

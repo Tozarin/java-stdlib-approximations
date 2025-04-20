@@ -95,9 +95,4 @@ public class NoIdTable extends ANoIdTable {
         size = 0;
         data = Engine.makeSymbolicMap();
     }
-
-    @Override
-    public Iterable<Object[]> findAll() {
-        return this;
-    }
 }

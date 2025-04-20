@@ -2,6 +2,7 @@ package generated.org.springframework.boot.databases.iterators.basetables;
 
 import generated.org.springframework.boot.databases.basetables.BaseTable;
 import org.usvm.api.Engine;
+import org.usvm.api.internal.SymbolicListImpl;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -17,12 +18,13 @@ public class BaseTableIterator<V> implements Iterator<Object[]> {
     boolean reversed;
     Object[] curr;
 
-    List<V> returnedIds;
+    ArrayList<V> returnedIds;
 
     public BaseTableIterator(BaseTable<V> table) {
         this(table, false);
     }
 
+    @SuppressWarnings("unchecked")
     public BaseTableIterator(BaseTable<V> table, boolean reversed) {
         this.table = table;
 
@@ -44,7 +46,8 @@ public class BaseTableIterator<V> implements Iterator<Object[]> {
     }
 
     private void ensureId(V id) {
-        for (V old : returnedIds) Engine.assume(!old.equals(id));
+
+        for (int i = 0; i < returnedIds.size(); i++) Engine.assume(!returnedIds.get(i).equals(id));
         returnedIds.add(id);
     }
 
