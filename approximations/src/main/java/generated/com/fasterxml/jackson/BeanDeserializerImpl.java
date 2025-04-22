@@ -7,18 +7,15 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.deser.BeanDeserializer;
 import com.fasterxml.jackson.databind.deser.BeanDeserializerBase;
-import com.fasterxml.jackson.databind.deser.BeanDeserializerBuilder;
 import com.fasterxml.jackson.databind.deser.SettableBeanProperty;
 import generated.org.springframework.boot.SpringApplicationImpl;
 import generated.org.springframework.boot.SymbolicValueFactory;
 import generated.org.springframework.boot.pinnedValues.PinnedValueSource;
+import generated.org.springframework.boot.resolvers.ResolverUtils;
 import org.jacodb.approximation.annotation.Approximate;
-import stub.java.util.map.RequestMap;
 
 import java.io.IOException;
 import java.io.Serial;
-import java.lang.reflect.Type;
-import java.util.*;
 
 import static generated.org.springframework.boot.pinnedValues.PinnedValueStorage.writePinnedValue;
 
@@ -36,14 +33,7 @@ public class BeanDeserializerImpl extends BeanDeserializer {
     public final static int MAX_ITERATION = 1;
 
     private boolean _isJsonPrimitive(JavaType type) {
-        return _isJsonPrimitive(type.getRawClass());
-    }
-
-    private boolean _isJsonPrimitive(Class<?> clazz) {
-        // Here are types like Integer string etc.
-        // Currently only int and string
-        List<Class<?>> primitives = Arrays.asList(String.class, Integer.class, Boolean.class);
-        return primitives.contains(clazz) || clazz.isPrimitive();
+        return ResolverUtils.isPrimitive(type.getRawClass());
     }
 
     private void _writeToState(Object root) {
@@ -74,7 +64,7 @@ public class BeanDeserializerImpl extends BeanDeserializer {
 
         Object result;
 
-        if (_isJsonPrimitive(clazz))
+        if (ResolverUtils.isPrimitive(clazz))
             result = SymbolicValueFactory.createSymbolic(clazz, true);
         else
             result = deserializeFromObject(p, ctxt);

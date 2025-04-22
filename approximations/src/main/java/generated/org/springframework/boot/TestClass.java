@@ -15,7 +15,7 @@ public class TestClass {
     @Autowired
     private MockMvc mockMvc;
 
-    private static void ignoreResult(Object result) {
+    public static void ignoreResult(Object result) {
 
     }
 }

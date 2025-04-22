@@ -2,7 +2,6 @@ package generated.org.springframework.boot;
 
 import generated.org.springframework.boot.pinnedValues.PinnedValueSource;
 import generated.org.springframework.boot.pinnedValues.PinnedValueStorage;
-import jakarta.servlet.Filter;
 import jakarta.servlet.http.Cookie;
 import org.jacodb.approximation.annotation.Approximate;
 import org.springframework.boot.ApplicationArguments;
@@ -11,22 +10,22 @@ import org.springframework.boot.context.logging.LoggingApplicationListener;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.HttpMethod;
-// TODO: Security #AA
-//import org.springframework.security.core.GrantedAuthority;
-//import org.springframework.security.core.userdetails.User;
-//import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.DefaultMockMvcBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import org.usvm.api.Engine;
 
 import static generated.org.springframework.boot.pinnedValues.PinnedValueSource.RESPONSE_EXCEPTION;
+import static generated.org.springframework.boot.pinnedValues.PinnedValueStorage.getPinnedValue;
 import static generated.org.springframework.boot.pinnedValues.PinnedValueStorage.writePinnedValue;
-// TODO: Security #AA
-// import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
 import java.io.UnsupportedEncodingException;
 import java.util.*;
@@ -35,6 +34,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 @Approximate(org.springframework.boot.SpringApplication.class)
 public class SpringApplicationImpl {
+
+    private static final boolean SECURITY_ENABLED = false;
 
     private List<ApplicationListener<?>> listeners;
 
@@ -79,15 +80,14 @@ public class SpringApplicationImpl {
         writePinnedValue(PinnedValueSource.REQUEST_HEADER, "AUTHORIZATION", null);
     }
 
-// TODO: Security #AA
-//    private static UserDetails _createSymbolicUser() {
-//        String username = getPinnedValue(PinnedValueSource.REQUEST_USER_NAME, String.class);
-//        String password = getPinnedValue(PinnedValueSource.REQUEST_USER_PASSWORD, String.class);
-//        Collection<GrantedAuthority> authorities = new ArrayList<>();
-//        Engine.assume(username != null && !username.isEmpty());
-//        Engine.assume(password != null && !password.isEmpty());
-//        return new User(username, password, authorities);
-//    }
+    private static UserDetails _createSymbolicUser() {
+        String username = getPinnedValue(PinnedValueSource.REQUEST_USER_NAME, String.class);
+        String password = getPinnedValue(PinnedValueSource.REQUEST_USER_PASSWORD, String.class);
+        Collection<GrantedAuthority> authorities = new ArrayList<>();
+        Engine.assume(username != null && !username.isEmpty());
+        Engine.assume(password != null && !password.isEmpty());
+        return new User(username, password, authorities);
+    }
 
     protected void afterRefresh(ConfigurableApplicationContext context, ApplicationArguments args) {
         // TODO: care about conditional beans
@@ -115,14 +115,15 @@ public class SpringApplicationImpl {
 
             Object[] pathArgs = new Object[paramCount];
             Arrays.fill(pathArgs, 0);
-            // TODO: Security #AA
-            // UserDetails userDetails = _createSymbolicUser();
-            // _fillSecurityHeaders();
             try {
                 HttpMethod method = HttpMethod.valueOf(methodName);
-                // TODO: Security #AA
-                // .with(user(userDetails))
-                ResultActions result = mockMvc.perform(request(method, path, pathArgs));
+                MockHttpServletRequestBuilder request = request(method, path, pathArgs);
+                if (SECURITY_ENABLED) {
+                    UserDetails userDetails = _createSymbolicUser();
+                    _fillSecurityHeaders();
+                    request = request.with(user(userDetails));
+                }
+                ResultActions result = mockMvc.perform(request);
                 _writeResponse(result.andReturn().getResponse());
                 _internalLog("[USVM] end of path analysis", path);
             } catch (Throwable e) {
