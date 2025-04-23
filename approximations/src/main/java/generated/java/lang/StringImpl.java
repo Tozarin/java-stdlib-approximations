@@ -209,6 +209,7 @@ public class StringImpl implements Serializable {
         Engine.assume(obj.value != null);
         int len = obj.value.length >> obj.coder;
         Engine.assume(len >= 0);
+        // TODO: add Engine.assumeSymbolic(instance, bool) #ASAP
         Engine.assume(len <= STRING_LENGTH_MAX);
     }
 

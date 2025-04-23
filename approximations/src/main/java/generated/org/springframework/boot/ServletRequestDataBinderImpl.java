@@ -65,7 +65,7 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
         return (Class<T>) MethodType.methodType(c).wrap().returnType();
     }
 
-    private static Map<String, Object> _getFieldTypes(Class<?> target, ClassLoader classLoader) {
+    private static Map<String, Object> _getFieldTypes(Class<?> target) {
         throw new IllegalStateException("This method must be approximated");
     }
 
@@ -156,8 +156,11 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
 
     private boolean canWriteField(String fieldName, Class<?> fieldType) {
         List<Class<?>> prohibitedTypes = List.of(Set.class);
-        if (prohibitedTypes.stream().anyMatch(t -> t.isAssignableFrom(fieldType)))
-            return false;
+        for (Class<?> prohibitedType : prohibitedTypes) {
+            if (prohibitedType.isAssignableFrom(fieldType))
+                return false;
+        }
+
         String[] allowed = getAllowedFields();
         String[] disallowed = getDisallowedFields();
         return ((ObjectUtils.isEmpty(allowed) || PatternMatchUtils.simpleMatch(allowed, fieldName)) &&
@@ -181,14 +184,12 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
         boolean shouldInitialize = !ResolverUtils.isPrimitive(componentType);
 
         if (shouldInitialize) {
-            for (int i = currentSize; i < newSize; i++) {
+            for (int i = currentSize; i < newSize; i++) { // TODO kek
                 Array.set(newArray, i, newValue(elementType));
             }
         }
 
-
         return newArray;
-
     }
 
     private static void growCollectionIfNecessary(
@@ -203,11 +204,11 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
 
         boolean shouldInitialize = !ResolverUtils.isPrimitive(elementType.getClazz());
 
-        for (int i = collection.size(); i < length + 1; i++) {
+        for (int i = collection.size(); i < length + 1; i++) { // TODO kek
             if (shouldInitialize) {
                 collection.add(newValue(elementType));
             } else {
-                collection.add(null);
+                collection.add(null); // TODO: why? #AA
             }
         }
     }
@@ -226,7 +227,7 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
             throw new IllegalArgumentException("Collection cannot be null");
         }
 
-        if (collection.getClass().isArray()) {
+        if (Engine.typeIsArray(collection)) {
             Object newCollection = growArrayIfNecessary(collection, max_size, elementType);
             Object value = Array.get(newCollection, index);
             return Arrays.asList(newCollection, value);
@@ -243,7 +244,7 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
             Iterable iterable = (Iterable)collection;
 
             if (collection instanceof Collection<?>)
-                Engine.assume(max_size <= ((Collection)collection).size());
+                Engine.assume(max_size <= ((Collection)collection).size()); // TODO: invert? #AA
 
             Iterator<Object> it = iterable.iterator();
             for (int i = 0; it.hasNext(); i++) {
@@ -335,13 +336,14 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
             return value;
         }
 
-        else if (clazz.isArray() || Collection.class.isAssignableFrom(clazz)) {
+        boolean isArray = Engine.typeIsArray(target);
+        if (isArray || Collection.class.isAssignableFrom(clazz)) {
             int maxSize = MAX_ARRAY_INDEX;
 
             GenericClass elementType;
 
-            if (clazz.isArray()) {
-                elementType = new GenericClass(clazz.getComponentType());
+            if (isArray) {
+                elementType = new GenericClass(Engine.arrayElementType(target));
             } else {
                 elementType = typeArguments.get(0);
             }
@@ -368,8 +370,7 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
         }
 
         else {
-            ClassLoader classLoader = clazz.getClassLoader();
-            Map<String, Object> fieldData = _getFieldTypes(clazz, classLoader);
+            Map<String, Object> fieldData = _getFieldTypes(clazz);
 
             for (String fieldName : fieldData.keySet()) {
                 String pathWithField = path.isEmpty() ? fieldName : path + FIELD_SEPARATOR + fieldName;
@@ -394,7 +395,7 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
         private final Class<?> clazz;
         private final List<GenericClass> typeArguments;
 
-        @SuppressWarnings("rawtypes")
+        @SuppressWarnings({"rawtypes", "PatternVariableCanBeUsed"})
         public GenericClass(Object classWithGenerics) {
             typeArguments = new ArrayList<>();
 
