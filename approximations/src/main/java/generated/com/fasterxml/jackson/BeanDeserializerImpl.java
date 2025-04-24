@@ -24,7 +24,7 @@ public class BeanDeserializerImpl extends BeanDeserializer {
 
     @Serial
     private static final long serialVersionUID = 1L;
-    
+
     protected BeanDeserializerImpl(BeanDeserializerBase src) {
         super(src);
     }
@@ -33,7 +33,7 @@ public class BeanDeserializerImpl extends BeanDeserializer {
     public final static int MAX_ITERATION = 1;
 
     private boolean _isJsonPrimitive(JavaType type) {
-        return ResolverUtils.isPrimitive(type.getRawClass());
+        return ResolverUtils.isPrimitiveOrWrapper(type.getRawClass());
     }
 
     private void _writeToState(Object root) {
@@ -64,7 +64,7 @@ public class BeanDeserializerImpl extends BeanDeserializer {
 
         Object result;
 
-        if (ResolverUtils.isPrimitive(clazz))
+        if (ResolverUtils.isPrimitiveOrWrapper(clazz))
             result = SymbolicValueFactory.createSymbolic(clazz, true);
         else
             result = deserializeFromObject(p, ctxt);
@@ -76,7 +76,7 @@ public class BeanDeserializerImpl extends BeanDeserializer {
 
         return result;
     }
-    
+
     public Object deserializeFromObject(JsonParser p, DeserializationContext ctxt) throws IOException {
         if (_concreteDeserialization())
             return deserializeFromObjectReal(p, ctxt);

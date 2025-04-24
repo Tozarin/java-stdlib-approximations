@@ -21,7 +21,7 @@ public class ResolverUtils {
         return PinnedValueStorage.getPinnedValue(source, name, clazz);
     }
 
-    public static Boolean isPrimitive(Class<?> clazz) {
+    public static Boolean isPrimitiveOrWrapper(Class<?> clazz) {
         List<Class<?>> primitives = Arrays.asList(
                 Boolean.class,
                 Byte.class,

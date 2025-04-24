@@ -16,14 +16,11 @@ public class PathVariableMethodArgumentResolverImpl {
     protected Object resolveName(String name, MethodParameter parameter, NativeWebRequest request) throws Exception {
         String parameterName = parameter.getParameterName();
         String path = request.getContextPath();
-        if (parameterName == null) {
-            return ResolverUtils.createNullPinned(PinnedValueSource.REQUEST_PATH_VARIABLE, name, String.class);
-        }
+        if (parameterName == null)
+            return null;
 
-        if (!path.contains(String.format("{%s}", parameterName))) {
-            _println(String.format("Warning! %s did not contain %s", path, parameterName));
-            return ResolverUtils.createNullPinned(PinnedValueSource.REQUEST_PATH_VARIABLE, name, String.class);
-        }
+        if (!path.contains(String.format("{%s}", parameterName)))
+            return null;
 
         return ResolverUtils.getNonEmptySymbolicString(PinnedValueSource.REQUEST_PATH_VARIABLE, name);
     }

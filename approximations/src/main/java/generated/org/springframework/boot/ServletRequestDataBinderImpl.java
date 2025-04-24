@@ -8,6 +8,7 @@ import org.jacodb.approximation.annotation.Approximate;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.CachedIntrospectionResults;
 import org.springframework.core.CollectionFactory;
+import org.springframework.core.ResolvableType;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.PatternMatchUtils;
 import org.springframework.util.ReflectionUtils;
@@ -42,7 +43,7 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
     public void bind(ServletRequest request) {
         symbolicBind(
                 getTarget(),
-                new GenericClass(getType()),
+                getType(),
                 "",
                 null,
                 0
@@ -50,14 +51,16 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
         SpringApplicationImpl._println("Bind finished");
     }
 
-    private Class<?> getType() {
-        if (getTargetType() != null)
-            return getTargetType().toClass();
+    private GenericClass getType() {
+        ResolvableType type = getTargetType();
+        if (type != null)
+            return new GenericClass(type.toClass(), getTarget(), true);
 
-        if (getTarget() != null)
-            return getTarget().getClass();
+        Object target = getTarget();
+        if (target != null)
+            return new GenericClass(target.getClass(), target, false);
 
-        return null;
+        return new GenericClass(null, null, true);
     }
 
     @SuppressWarnings("unchecked")
@@ -106,45 +109,41 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
         return null;
     }
 
-    private static Object newValue(GenericClass clazz) {
-        Class<?> type = clazz.getClazz();
-
+    private static Object newValue(GenericClass type) {
         try {
             if (type.isArray()) {
-                Class<?> componentType = type.componentType();
+                GenericClass componentType = type.componentType(null);
                 if (componentType.isArray()) {
-                    Object array = Array.newInstance(componentType, 1);
-                    Array.set(array, 0, Array.newInstance(componentType.componentType(), 0));
+                    Object array = Array.newInstance(componentType.getInternalClass(), 1);
+                    Object innerArray = Array.newInstance(componentType.componentType(null).getInternalClass(), 0);
+                    Array.set(array, 0, innerArray);
                     return array;
                 }
-                else {
-                    return Array.newInstance(componentType, 0);
-                }
+
+                return Array.newInstance(componentType.getInternalClass(), 0);
             }
-            else if (Collection.class.isAssignableFrom(type)) {
-                return CollectionFactory.createCollection(type, null, 16);
+            else if (type.isAssignableTo(Collection.class)) {
+                return CollectionFactory.createCollection(type.getInternalClass(), null, 16);
             }
-            else if (Map.class.isAssignableFrom(type)) {
-                return CollectionFactory.createMap(type, null, 16);
+            else if (type.isAssignableTo(Map.class)) {
+                return CollectionFactory.createMap(type.getInternalClass(), null, 16);
             }
-            Constructor<?> ctor = type.getDeclaredConstructor();
+            Constructor<?> ctor = type.getInternalClass().getDeclaredConstructor();
             return BeanUtils.instantiateClass(ctor);
         } catch (NoSuchMethodException e) {
-            SpringApplicationImpl._println(String.format(
-                    "Warning! Class %s has no default parameterless constructor!",
-                    type.getName()
-            ));
+            SpringApplicationImpl._println("Warning! Class has no default parameterless constructor!");
         }
         return null;
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private void writeArrayIndex(
+    private void writeByIndex(
             Object collection,
+            GenericClass type,
             int index,
             Object value
     ) {
-        if (collection.getClass().isArray()) {
+        if (type.isArray()) {
             Array.set(collection, index, value);
         }
 
@@ -154,10 +153,10 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
         }
     }
 
-    private boolean canWriteField(String fieldName, Class<?> fieldType) {
+    private boolean canWriteField(String fieldName, GenericClass fieldType) {
         List<Class<?>> prohibitedTypes = List.of(Set.class);
         for (Class<?> prohibitedType : prohibitedTypes) {
-            if (prohibitedType.isAssignableFrom(fieldType))
+            if (fieldType.isAssignableTo(prohibitedType))
                 return false;
         }
 
@@ -170,22 +169,22 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
     private static Object growArrayIfNecessary(
             Object array,
             int newSize,
-            GenericClass elementType
+            GenericClass arrayType
     ) {
         int currentSize = Array.getLength(array);
 
         if (currentSize >= newSize)
             return array;
 
-        Class<?> componentType = array.getClass().componentType();
-        Object newArray = Array.newInstance(componentType, newSize);
+        GenericClass componentType = arrayType.componentType(null);
+        Object newArray = Array.newInstance(componentType.getInternalClass(), newSize);
         LibSLRuntime.ArrayActions.copy(array, 0, newArray, 0, currentSize);
 
-        boolean shouldInitialize = !ResolverUtils.isPrimitive(componentType);
+        boolean shouldInitialize = !componentType.isPrimitiveOrWrapper();
 
         if (shouldInitialize) {
-            for (int i = currentSize; i < newSize; i++) { // TODO kek
-                Array.set(newArray, i, newValue(elementType));
+            for (int i = currentSize; i < newSize; i++) {
+                Array.set(newArray, i, newValue(componentType));
             }
         }
 
@@ -195,20 +194,20 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
     private static void growCollectionIfNecessary(
             Collection<Object> collection,
             int length,
-            GenericClass elementType
+            GenericClass collectionType
     ) {
-
         int currentSize = collection.size();
         if (currentSize >= length)
             return;
 
-        boolean shouldInitialize = !ResolverUtils.isPrimitive(elementType.getClazz());
+        GenericClass elementType = collectionType.getTypeArg();
+        boolean shouldInitialize = !elementType.isPrimitiveOrWrapper();
 
         for (int i = collection.size(); i < length + 1; i++) { // TODO kek
             if (shouldInitialize) {
                 collection.add(newValue(elementType));
             } else {
-                collection.add(null); // TODO: why? #AA
+                collection.add(null);
             }
         }
     }
@@ -216,7 +215,7 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static List<Object> getOrAllocateByIndex(
             Object collection,
-            GenericClass elementType,
+            GenericClass collectionType,
             int index,
             int max_size
     ) {
@@ -227,15 +226,15 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
             throw new IllegalArgumentException("Collection cannot be null");
         }
 
-        if (Engine.typeIsArray(collection)) {
-            Object newCollection = growArrayIfNecessary(collection, max_size, elementType);
+        if (collectionType.isArray()) {
+            Object newCollection = growArrayIfNecessary(collection, max_size, collectionType);
             Object value = Array.get(newCollection, index);
             return Arrays.asList(newCollection, value);
         }
 
         if (collection instanceof List) {
             List list = (List)collection;
-            growCollectionIfNecessary(list, max_size, elementType);
+            growCollectionIfNecessary(list, max_size, collectionType);
             Object value = list.get(index);
             return Arrays.asList(collection, value);
         }
@@ -244,7 +243,7 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
             Iterable iterable = (Iterable)collection;
 
             if (collection instanceof Collection<?>)
-                Engine.assume(max_size <= ((Collection)collection).size()); // TODO: invert? #AA
+                Engine.assume(max_size <= ((Collection)collection).size());
 
             Iterator<Object> it = iterable.iterator();
             for (int i = 0; it.hasNext(); i++) {
@@ -254,7 +253,7 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
             }
         }
 
-        SpringApplicationImpl._println("Warning! Collection type was not supported!");
+        SpringApplicationImpl._internalLog("Warning! Collection type was not supported!", collectionType.toString());
         Engine.assume(false);
         throw new IllegalArgumentException("Unsupported collection type");
     }
@@ -264,12 +263,13 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
             Field field,
             GenericClass childType
     ) {
+        SpringApplicationImpl._internalLog("FIELD:", field.toString(), field.getType().toString());
         Object existing = readField(parent, field);
 
         if (existing != null)
             return existing;
 
-        if (ResolverUtils.isPrimitive(childType.getClazz()))
+        if (childType.isPrimitiveOrWrapper())
             return null;
 
         existing = newValue(childType);
@@ -280,6 +280,9 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
 
     private boolean canGrowArray(Field field) {
         try {
+            if (!field.getType().isArray())
+                return true;
+
             Class<?> introspectionClass = CachedIntrospectionResults.class;
 
             CachedIntrospectionResults introspection =
@@ -291,18 +294,15 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
                     (PropertyDescriptor) introspectionClass.getDeclaredMethod("getPropertyDescriptor", String.class)
                     .invoke(introspection, field.getName());
 
-            if (field.getType().isArray())
-                return propertyDescriptor.getWriteMethod() != null;
-
-            return true;
+            return propertyDescriptor.getWriteMethod() != null;
         } catch (Exception e) {
             SpringApplicationImpl._println("Warning! Error occurred " + e);
         }
         return false;
     }
 
-    private int getSize(Object collection) {
-        if (collection.getClass().isArray())
+    private int getSize(Object collection, GenericClass collectionType) {
+        if (collectionType.isArray())
             return Array.getLength(collection);
 
         if (collection instanceof List)
@@ -323,61 +323,54 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
         //     return null;
         // }
 
-        Class<?> clazz = genericClass.getClazz();
-        List<GenericClass> typeArguments = genericClass.getGenerics();
-
-        if (clazz == null) return null;
+        if (genericClass.isNull()) return null;
 
         if (depth > MAX_DEPTH) return null;
 
-        if (ResolverUtils.isPrimitive(clazz)) {
-            Object value = getInputData(path, clazz);
+        if (genericClass.isPrimitiveOrWrapper()) {
+            Object value = getInputData(path, genericClass.getInternalClass());
             Engine.assume(value != null);
             return value;
         }
 
-        boolean isArray = Engine.typeIsArray(target);
-        if (isArray || Collection.class.isAssignableFrom(clazz)) {
+        boolean isArray = genericClass.isArray();
+        if (isArray || genericClass.isAssignableTo(Collection.class)) {
             int maxSize = MAX_ARRAY_INDEX;
-
-            GenericClass elementType;
-
-            if (isArray) {
-                elementType = new GenericClass(Engine.arrayElementType(target));
-            } else {
-                elementType = typeArguments.get(0);
-            }
 
             Object collection = target;
 
             if (!canGrowArray(sourceField)) {
-                maxSize = getSize(collection);
+                maxSize = getSize(collection, genericClass);
             }
 
             for (int i = 0; i < maxSize; i++) {
                 String pathWithIndex = String.format("%s[%d]", path, i);
-                List<Object> collectionToValue = getOrAllocateByIndex(collection, elementType, i, maxSize);
+                List<Object> collectionToValue = getOrAllocateByIndex(collection, genericClass, i, maxSize);
                 collection = collectionToValue.get(0);
                 Object oldValue = collectionToValue.get(1);
                 SpringApplicationImpl._println(oldValue == null ? "null" : oldValue.toString());
+                GenericClass elementType = genericClass.collectionElementType(oldValue);
                 Object newValue = symbolicBind(oldValue, elementType, pathWithIndex, sourceField, depth + 1);
 
                 if (newValue != null)
-                    writeArrayIndex(collection, i, newValue);
+                    writeByIndex(collection, genericClass, i, newValue);
             }
 
             return collection;
         }
 
         else {
+            Class<?> clazz = genericClass.getInternalClass();
             Map<String, Object> fieldData = _getFieldTypes(clazz);
 
-            for (String fieldName : fieldData.keySet()) {
+            for (Map.Entry<String, Object> fData : fieldData.entrySet()) {
+                String fieldName = fData.getKey();
+                Object fieldClass = fData.getValue();
                 String pathWithField = path.isEmpty() ? fieldName : path + FIELD_SEPARATOR + fieldName;
-                GenericClass fieldType = new GenericClass(fieldData.get(fieldName));
+                GenericClass fieldType = new GenericClass(fieldClass);
                 Field field = findField(clazz, fieldName);
 
-                if (!canWriteField(fieldName, fieldType.getClazz()))
+                if (!canWriteField(fieldName, fieldType))
                     continue;
 
                 Object oldValue = getOrAllocateByField(target, field, fieldType);
@@ -392,7 +385,9 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
     }
 
     private static class GenericClass {
+        private final boolean classIsConcrete;
         private final Class<?> clazz;
+        private final Object target;
         private final List<GenericClass> typeArguments;
 
         @SuppressWarnings({"rawtypes", "PatternVariableCanBeUsed"})
@@ -400,6 +395,8 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
             typeArguments = new ArrayList<>();
 
             if (classWithGenerics instanceof List) {
+                classIsConcrete = true;
+                target = null;
                 List casted = (List)classWithGenerics;
                 clazz = (Class<?>)casted.get(0);
                 for (Object generic : (List)casted.get(1))
@@ -410,12 +407,58 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
             throw new IllegalStateException("class with generics was malformed");
         }
 
-        public GenericClass(Class<?> clazz) {
+        public GenericClass(Class<?> clazz, Object target, boolean classIsConcrete) {
             this.clazz = clazz;
+            this.target = target;
+            this.classIsConcrete = classIsConcrete;
             typeArguments = new ArrayList<>();
         }
 
-        public Class<?> getClazz() {
+        public boolean isArray() {
+            if (classIsConcrete | target == null)
+                return clazz.isArray();
+
+            return Engine.typeIsArray(target);
+        }
+
+        public GenericClass componentType(Object newTarget) {
+            if (classIsConcrete | target == null)
+                return new GenericClass(clazz.componentType(), newTarget, classIsConcrete);
+
+            return new GenericClass(Engine.arrayElementType(target), newTarget, false);
+        }
+
+        public GenericClass collectionElementType(Object newTarget) {
+            if (isArray())
+                return componentType(newTarget);
+
+            return getTypeArg();
+        }
+
+        public GenericClass getTypeArg() {
+            return typeArguments.get(0);
+        }
+
+        public boolean isAssignableTo(Class<?> clazz) {
+            if (classIsConcrete | target == null)
+                return clazz.isAssignableFrom(this.clazz);
+
+            return Engine.typeIsSubtype(target, clazz);
+        }
+
+        public boolean isNull() {
+            return clazz == null;
+        }
+
+        public boolean isPrimitiveOrWrapper() {
+            if (classIsConcrete | target == null)
+                return ResolverUtils.isPrimitiveOrWrapper(this.clazz);
+
+            // TODO
+            return ResolverUtils.isPrimitiveOrWrapper(this.clazz);
+        }
+
+        public Class<?> getInternalClass() {
             return clazz;
         }
 
