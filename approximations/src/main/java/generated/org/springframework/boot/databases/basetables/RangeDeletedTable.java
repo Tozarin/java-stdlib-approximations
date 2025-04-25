@@ -45,9 +45,6 @@ public class RangeDeletedTable<V> extends AChainedBaseTable<V> {
     public Iterator<Object[]> iterator() { return new RangeDeletedTableIterator<>(this); }
 
     @Override
-    public Iterator<Object[]> backIterator() { return new RangeDeletedTableIterator<>(this, true); }
-
-    @Override
     public void deleteAll() {
         table.deleteAll();
         savedRows = Engine.makeSymbolicMap();

@@ -10,12 +10,8 @@ public class MappedIterator<T, R> implements Iterator<R> {
     Iterator<T> tblIter;
 
     public MappedIterator(MappedTable<T, R> mappedTable) {
-        this(mappedTable, false);
-    }
-
-    public MappedIterator(MappedTable<T, R> mappedTable, boolean reversed) {
         this.mappedTable = mappedTable;
-        this.tblIter = reversed ? mappedTable.table.backIterator() : mappedTable.table.iterator();
+        this.tblIter = mappedTable.table.iterator();
     }
 
     @Override

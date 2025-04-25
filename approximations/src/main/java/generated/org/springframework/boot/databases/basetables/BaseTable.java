@@ -70,7 +70,4 @@ public class BaseTable<V> extends ABaseTable<V> {
     @NotNull
     @Override
     public Iterator<Object[]> iterator() { return new BaseTableIterator<>(this); }
-
-    @Override
-    public Iterator<Object[]> backIterator() { return new BaseTableIterator<>(this, true); }
 }

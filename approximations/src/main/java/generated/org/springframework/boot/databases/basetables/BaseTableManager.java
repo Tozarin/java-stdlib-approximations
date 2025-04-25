@@ -59,9 +59,6 @@ public class BaseTableManager<V> extends ABaseTable<V> implements ITableManager 
     public Iterator<Object[]> iterator() { return tablesChain.iterator(); }
 
     @Override
-    public Iterator<Object[]> backIterator() { return tablesChain.backIterator(); }
-
-    @Override
     public Class<Object[]> type() { return tablesChain.type(); }
 
     @Override

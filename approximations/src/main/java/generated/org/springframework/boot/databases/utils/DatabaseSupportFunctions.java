@@ -8,15 +8,49 @@ public class DatabaseSupportFunctions {
 
     // region Comparers
 
-    static Integer comparer(String left, String right) { return left.compareTo(right); }
-    static Integer comparer(Integer left, Integer right) { return left.compareTo(right); }
-    static Integer comparer(Long left, Long right) { return left.compareTo(right); }
-    static Integer comparer(Boolean left, Boolean right) { return left.compareTo(right); }
-    static Integer comparer(Float left, Float right) { return left.compareTo(right); }
-    static Integer comparer(Double left, Double right) { return left.compareTo(right); }
-    static Integer comparer(BigInteger left, BigInteger right) { return left.compareTo(right); }
-    static Integer comparer(BigDecimal left, BigDecimal right) { return left.compareTo(right); }
-    static Integer comparer(LocalDateTime left, LocalDateTime right) { return left.compareTo(right); }
+    static Integer basicComparer(Object left, Object right) {
+        if (left == null && right == null) return 0;
+        if (left == null) return -1;
+        if (right == null) return 1;
+        return null;
+    }
+
+    static Integer comparer(String left, String right) {
+        Integer base = basicComparer(left, right);
+        return base == null ? left.compareTo(right) : base;
+    }
+    static Integer comparer(Integer left, Integer right) {
+        Integer base = basicComparer(left, right);
+        return base == null ? left.compareTo(right) : base;
+    }
+    static Integer comparer(Long left, Long right) {
+        Integer base = basicComparer(left, right);
+        return base == null ? left.compareTo(right) : base;
+    }
+    static Integer comparer(Boolean left, Boolean right) {
+        Integer base = basicComparer(left, right);
+        return base == null ? left.compareTo(right) : base;
+    }
+    static Integer comparer(Float left, Float right) {
+        Integer base = basicComparer(left, right);
+        return base == null ? left.compareTo(right) : base;
+    }
+    static Integer comparer(Double left, Double right) {
+        Integer base = basicComparer(left, right);
+        return base == null ? left.compareTo(right) : base;
+    }
+    static Integer comparer(BigInteger left, BigInteger right) {
+        Integer base = basicComparer(left, right);
+        return base == null ? left.compareTo(right) : base;
+    }
+    static Integer comparer(BigDecimal left, BigDecimal right) {
+        Integer base = basicComparer(left, right);
+        return base == null ? left.compareTo(right) : base;
+    }
+    static Integer comparer(LocalDateTime left, LocalDateTime right) {
+        Integer base = basicComparer(left, right);
+        return base == null ? left.compareTo(right) : base;
+    }
 
     // endregion
 

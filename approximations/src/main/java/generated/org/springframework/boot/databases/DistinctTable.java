@@ -50,12 +50,6 @@ public class DistinctTable<T> implements ITable<T> {
         return new DistinctIterator<>(table);
     }
 
-    @NotNull
-    @Override
-    public Iterator<T> backIterator() {
-        return new DistinctIterator<>(table, true);
-    }
-
     @Override
     public Class<T> type() {
         return table.type();

@@ -142,12 +142,6 @@ public class JoinedTable<L, R> implements ITable<Object[]> {
         return new JoinedIterator<>(this);
     }
 
-    @NotNull
-    @Override
-    public Iterator<Object[]> backIterator() {
-        return new JoinedIterator<>(this, true);
-    }
-
     @Override
     public Class<Object[]> type() {
         return Object[].class;

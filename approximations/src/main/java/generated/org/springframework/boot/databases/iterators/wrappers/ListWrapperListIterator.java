@@ -62,10 +62,9 @@ public class ListWrapperListIterator<T> implements ListIterator<T> {
 
         if (ix <= list.wrpStartIx || list.wrpEndIx < ix) return list.cache.get(--ix);
 
-        assert (ix == list.wrpEndIx - 1);
-        list.cachePrev();
+        list.cacheUntilIx(--ix);
 
-        return list.cache.get(--ix);
+        return list.cache.get(ix);
     }
 
     @Override

@@ -46,12 +46,6 @@ public class MappedTable<T, R> implements ITable<R> {
         return new MappedIterator<>(this);
     }
 
-    @NotNull
-    @Override
-    public Iterator<R> backIterator() {
-        return new MappedIterator<>(this, true);
-    }
-
     @Override
     public Class<R> type() {
         return type;

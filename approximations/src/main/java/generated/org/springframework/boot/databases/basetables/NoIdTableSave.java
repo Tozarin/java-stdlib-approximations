@@ -34,9 +34,6 @@ public class NoIdTableSave extends AChainedNoIdTable {
         return count;
     }
 
-    @Override
-    public Iterator<Object[]> backIterator() { return new NoIdTableSaveIterator(this); }
-
     @NotNull
     @Override
     public Iterator<Object[]> iterator() { return new NoIdTableSaveIterator(this); }

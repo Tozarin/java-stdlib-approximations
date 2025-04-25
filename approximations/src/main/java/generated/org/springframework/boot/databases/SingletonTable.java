@@ -27,12 +27,6 @@ public class SingletonTable<T> implements ITable<T> {
         return new SingletonIterator<>(data);
     }
 
-    @NotNull
-    @Override
-    public Iterator<T> backIterator() {
-        return new SingletonIterator<>(data);
-    }
-
     @Override
     public Class<T> type() {
         return type;

@@ -26,9 +26,6 @@ public class BaseTableSave<V> extends AChainedBaseTable<V> {
     public Iterator<Object[]> iterator() { return new BaseTableSaveIterator<>(this); }
 
     @Override
-    public Iterator<Object[]> backIterator() { return new BaseTableSaveIterator<>(this); }
-
-    @Override
     public void deleteAll() {
         table.deleteAll();
         this.saved = null;

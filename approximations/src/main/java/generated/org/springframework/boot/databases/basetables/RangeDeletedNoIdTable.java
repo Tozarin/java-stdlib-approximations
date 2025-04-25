@@ -34,9 +34,6 @@ public class RangeDeletedNoIdTable extends AChainedNoIdTable {
     public Iterator<Object[]> iterator() { return new RangeDeletedNoIdTableIterator(this); }
 
     @Override
-    public Iterator<Object[]> backIterator() { return new RangeDeletedNoIdTableIterator(this); }
-
-    @Override
     public void deleteAll() {
         table.deleteAll();
         savedRows = new SymbolicMapImpl<>();

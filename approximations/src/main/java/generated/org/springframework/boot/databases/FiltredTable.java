@@ -99,13 +99,7 @@ public class FiltredTable<T> implements ITable<T> {
     @Override
     public Iterator<T> iterator() {
         if (cacheSize != -1) return cache.iterator();
-        return new FiltredIterator<>(this, false);
-    }
-
-    @NotNull
-    @Override
-    public Iterator<T> backIterator() {
-        return new FiltredIterator<>(this, true);
+        return new FiltredIterator<>(this);
     }
 
     public Class<T> type() {

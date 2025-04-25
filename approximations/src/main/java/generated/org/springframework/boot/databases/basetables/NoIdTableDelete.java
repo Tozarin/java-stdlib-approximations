@@ -33,9 +33,6 @@ public class NoIdTableDelete extends AChainedNoIdTable {
         return count;
     }
 
-    @Override
-    public Iterator<Object[]> backIterator() { return new NoIdTableDeleteIterator(this); }
-
     @NotNull
     @Override
     public Iterator<Object[]> iterator() { return new NoIdTableDeleteIterator(this); }

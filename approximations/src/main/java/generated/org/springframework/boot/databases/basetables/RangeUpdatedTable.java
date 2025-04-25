@@ -51,9 +51,6 @@ public class RangeUpdatedTable<V> extends AChainedBaseTable<V> {
     public Iterator<Object[]> iterator() { return new RangeUpdatedTableIterator<>(this); }
 
     @Override
-    public Iterator<Object[]> backIterator() { return new RangeUpdatedTableIterator<>(this, true); }
-
-    @Override
     public void deleteAll() {
         table.deleteAll();
         currSize = 0;

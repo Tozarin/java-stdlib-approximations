@@ -13,12 +13,9 @@ import java.util.*;
 public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     public ITable<T> table;
-    public int tblStartIx;
-    public int tblEndIx;
-    public Class<T> type;
-
     public Iterator<T> tblIter;
-    public Iterator<T> backTblIter;
+    public int tblStartIx;
+    public Class<T> type;
 
     public SymbolicList<T> cache;
     public int sizeOfCache;
@@ -26,167 +23,98 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
     public int wrpEndIx;
 
     public int modCount;
-    private boolean inited = false;
+    private boolean initialized = false;
 
-    public ListWrapper(ITable<T> table) {
-        this.table = table;
-    }
+    public ListWrapper(ITable<T> table) { this.table = table; }
 
-    private void ensureInited() {
-        if (inited) return;
+    // table, * - cached, 0 - uncached
+    // |0|1|...|tblStIx-1|tblStIx|tblStIx+1|...|size-1|
+    // |*|*|...|    *    |   *   |    0    |...|  0   |
 
-        int tableSize = table.size();
+    // list, * - cached from table: wrpStIx points tblStIx, 0 - uncached, $ - added to end of list by add()
+    // |0|1|...|wrpStIx-1|wrpStIx|wrpStIx+1|...|wrpEndIx-1|wrpEndIx|wrpEndIx+1|...|sizeOfCache-1|
+    // |*|*|...|    *    |   *   |    0    |...|     0    |    $   |     $    |...|      $      |
+
+    private void ensureInitialized() {
+        if (initialized) return;
+
+        int tblSize = table.size();
+        this.tblIter = table.iterator();
         this.tblStartIx = 0;
-        this.tblEndIx = tableSize;
         this.type = table.type();
-
-        this.tblIter = this.table.iterator();
-        this.backTblIter = this.table.backIterator();
 
         this.cache = Engine.makeFullySymbolicList();
         Engine.assume(cache != null);
-        Engine.assume(cache.size() == tableSize);
-        this.sizeOfCache = tableSize;
+        Engine.assume(cache.size() == tblSize);
+        this.sizeOfCache = tblSize;
         this.wrpStartIx = 0;
-        this.wrpEndIx = tableSize;
+        this.wrpEndIx = tblSize;
 
         this.modCount = 0;
-        this.inited = true;
+        this.initialized = true;
     }
 
-    public ListWrapper(
-            ITable<T> table,
-            int tblStartIx,
-            int tblEndIx,
-            Class<T> type,
-            Iterator<T> tblIter,
-            Iterator<T> backTblIter,
-            SymbolicList<T> cache,
-            int sizeOfCache,
-            int wrpStartIx,
-            int wrpEndIx,
-            int modCount,
-            boolean inited
-    ) {
-        this.table = table;
-        this.tblStartIx = tblStartIx;
-        this.tblEndIx = tblEndIx;
-        this.type = type;
-        this.tblIter = tblIter;
-        this.backTblIter = backTblIter;
-        this.cache = cache;
-        this.sizeOfCache = sizeOfCache;
-        this.wrpStartIx = wrpStartIx;
-        this.wrpEndIx = wrpEndIx;
-        this.modCount = modCount;
-        this.inited = inited;
+    // region Cache
+
+    public T cacheNext() {
+        if (wrpStartIx == wrpEndIx) return null;
+
+        T next = tblIter.next();
+        cache.set(wrpStartIx, next);
+
+        wrpStartIx++;
+        tblStartIx++;
+
+        return next;
     }
 
-    @Override
-    public ITable<T> unwrap() {
-        return table;
+    public void cacheUntilIx(int ix) {
+
+        while (wrpStartIx <= ix && wrpStartIx < wrpEndIx) {
+            cacheNext();
+        }
     }
+
+    // endregion
 
     public void checkIndex(int ix) {
         if (ix < 0 || ix >= sizeOfCache) throw new IndexOutOfBoundsException();
     }
 
+    // region Find
+
     private int findLeft(T t) {
 
         for (int i = 0; i < wrpStartIx; i++) {
             T cached = cache.get(i);
-            if (cached == t || cached.equals(t)) return i;
-        }
-
-        return -1;
-    }
-
-    private int findLeftLast(T t) {
-
-        for (int i = wrpStartIx - 1; i > -1; i--) {
-            T cached = cache.get(i);
-            if (cached == t || cached.equals(t)) return i;
-        }
-
-        return -1;
-    }
-
-    private int findRight(T t) {
-
-        for (int i = wrpEndIx; i < sizeOfCache; i++) {
-            T cached = cache.get(i);
-            if (cached == t || cached.equals(t)) return i;
-        }
-
-        return -1;
-    }
-
-    private int findRightLast(T t) {
-
-        for (int i = sizeOfCache - 1; i > wrpEndIx - 1; i--) {
-            T cached = cache.get(i);
-            if (cached == t || cached.equals(t)) return i;
+            if (cached.equals(t)) return i;
         }
 
         return -1;
     }
 
     private int findMiddle(T t) {
-        T cached = cacheUntil(t);
-        if (cached != null) return wrpStartIx;
+        T next = cacheNext();
+        if (next == null) return -1;
+
+        if (next.equals(t)) return wrpStartIx;
+
+        return findMiddle(t);
+    }
+
+    private int findRight(T t) {
+
+        for (int i = wrpEndIx; i < sizeOfCache; i++) {
+            T cached = cache.get(i);
+            if (cached.equals(t)) return i;
+        }
+
         return -1;
     }
 
-    private int findMiddleLast(T t) {
-        T cached = cacheUntilBack(t);
-        if (cached != null) return wrpEndIx - 1;
-        return -1;
-    }
+    // endregion
 
-    public T cacheNext() {
-
-        if (wrpStartIx == wrpEndIx) return null;
-        T next = tblIter.next();
-        cache.set(wrpStartIx, next);
-        wrpStartIx++;
-        tblStartIx++;
-        return next;
-    }
-
-    public T cachePrev() {
-
-        if (wrpStartIx == wrpEndIx) return null;
-        T prev = backTblIter.next();
-        cache.set(wrpEndIx - 1, prev);
-        wrpEndIx--;
-        tblEndIx--;
-        return prev;
-    }
-
-    private T cacheUntil(T t) {
-
-        T cached = cacheNext();
-        while (cached != null && cached != t && !cached.equals(t)) {
-            cached = cacheNext();
-        }
-        return cached;
-    }
-
-    private T cacheUntilBack(T t) {
-
-        T cached = cachePrev();
-        while (cached != null && cached != t && !cached.equals(t)) {
-            cached = cachePrev();
-        }
-        return cached;
-    }
-
-    private void cacheUntilIx(int ix) {
-
-        while (wrpStartIx <= ix && wrpStartIx < wrpEndIx) {
-            cacheNext();
-        }
-    }
+    // region Remove
 
     private boolean removeLeft(T t) {
 
@@ -195,6 +123,24 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
             cache.remove(ix);
 
             wrpStartIx--;
+            wrpEndIx--;
+
+            sizeOfCache--;
+            modCount++;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean removeMiddle(T t) {
+
+        int ix = findMiddle(t);
+
+        if (ix != -1) {
+            cache.remove(ix);
+
             wrpEndIx--;
 
             sizeOfCache--;
@@ -221,69 +167,70 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
         return false;
     }
 
-    private boolean removeMiddle(T t) {
-
-        T cached = cacheUntil(t);
-
-        if (cached != null) {
-            cache.remove(wrpStartIx);
-
-            wrpStartIx--;
-            wrpEndIx--;
-
-            sizeOfCache--;
-            modCount++;
-
-            return true;
-        }
-
-        return false;
-    }
+    // endregion
 
     @Override
-    public int size() {
-        ensureInited();
-        int count = 0;
-        for (T ignored : this) { count++; }
+    public ITable<T> unwrap() { return table; }
 
+    private int cachedSize = -1;
+    @Override
+    public int size() {
+        ensureInitialized();
+        if (cachedSize != -1) return cachedSize;
+
+        int count = 0;
+        for (T ignored : this) count++;
+
+        cachedSize = count;
         return count;
     }
 
     @Override
-    public boolean isEmpty() {
-        return size() == 0;
-    }
+    public boolean isEmpty() { return size() == 0; }
 
     @Override
     public boolean contains(Object o) {
-        return indexOf(o) != -1;
+        ensureInitialized();
+
+        if (o == null) throw new NullPointerException();
+        if (!type.isInstance(o)) throw new ClassCastException();
+
+        T t = type.cast(o);
+
+        int leftIx = findLeft(t);
+        if (leftIx != -1) return true;
+
+        int midIx = findMiddle(t);
+        if (midIx != -1) return true;
+
+        return findRight(t) != -1;
     }
 
     @NotNull
     @Override
     public Iterator<T> iterator() {
-        ensureInited();
+        ensureInitialized();
         return new ListWrapperIterator<>(this);
     }
 
     @NotNull
     @Override
     public Object[] toArray() {
-        ensureInited();
+        ensureInitialized();
 
-        Object[] a = new Object[sizeOfCache];
+        Object[] arr = new Object[sizeOfCache];
 
         int ix = 0;
-        for (T t : this) a[ix++] = t;
+        for (T t : this) arr[ix++] = t;
 
-        return a;
+        return arr;
     }
 
     @NotNull
     @Override
     @SuppressWarnings("unchecked")
     public <T1> T1[] toArray(@NotNull T1[] a) {
-        ensureInited();
+        ensureInitialized();
 
         Class<?> genericType = a.getClass().componentType();
 
@@ -304,7 +251,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public boolean add(T t) {
-        ensureInited();
+        ensureInitialized();
 
         cache.insert(sizeOfCache, t);
         sizeOfCache++;
@@ -315,7 +262,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public boolean remove(Object o) {
-        ensureInited();
+        ensureInitialized();
 
         if (o == null) throw new NullPointerException();
         if (!type.isInstance(o)) throw new ClassCastException();
@@ -330,7 +277,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public boolean containsAll(@NotNull Collection<?> c) {
-        ensureInited();
+        ensureInitialized();
 
         for (Object o : c) if (!contains(o)) return false;
 
@@ -339,7 +286,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public boolean addAll(@NotNull Collection<? extends T> c) {
-        ensureInited();
+        ensureInitialized();
 
         if (c.isEmpty()) return false;
 
@@ -351,7 +298,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public boolean addAll(int index, @NotNull Collection<? extends T> c) {
-        ensureInited();
+        ensureInitialized();
 
         checkIndex(index);
 
@@ -372,7 +319,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public boolean removeAll(@NotNull Collection<?> c) {
-        ensureInited();
+        ensureInitialized();
 
         if (c.isEmpty()) return false;
 
@@ -386,16 +333,15 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public boolean retainAll(@NotNull Collection<?> c) {
-        ensureInited();
+        ensureInitialized();
 
-        SymbolicList<T> newCache = Engine.makeFullySymbolicList();
+        SymbolicList<T> newCache = Engine.makeSymbolicList();
         int newSize = 0;
         Engine.assume(newCache != null);
         Engine.assume(newCache.size() == 0);
 
         cacheUntilIx(wrpEndIx);
-        for (int i = 0; i < sizeOfCache; i++) {
-            T t = cache.get(i);
+        for (T t : this) {
             if (c.contains(t)) newCache.insert(newSize++, t);
         }
 
@@ -407,7 +353,6 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
         wrpStartIx = -1;
         wrpEndIx = -1;
         tblStartIx = -1;
-        tblEndIx = -1;
         modCount++;
 
         return true;
@@ -416,7 +361,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
     @Override
     public void clear() {
 
-        cache = Engine.makeFullySymbolicList();
+        cache = Engine.makeSymbolicList();
         Engine.assume(cache != null);
         Engine.assume(cache.size() == 0);
         sizeOfCache = 0;
@@ -424,13 +369,12 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
         wrpStartIx = -1;
         wrpEndIx = -1;
         tblStartIx = -1;
-        tblEndIx = -1;
         modCount++;
     }
 
     @Override
     public T get(int index) {
-        ensureInited();
+        ensureInitialized();
 
         checkIndex(index);
 
@@ -443,7 +387,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public T set(int index, T element) {
-        ensureInited();
+        ensureInitialized();
 
         checkIndex(index);
 
@@ -456,7 +400,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public void add(int index, T element) {
-        ensureInited();
+        ensureInitialized();
 
         checkIndex(index);
 
@@ -476,7 +420,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public T remove(int index) {
-        ensureInited();
+        ensureInitialized();
 
         checkIndex(index);
 
@@ -499,7 +443,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public int indexOf(Object o) {
-        ensureInited();
+        ensureInitialized();
 
         if (o == null) throw new NullPointerException();
         if (!type.isInstance(o)) throw new ClassCastException();
@@ -517,81 +461,49 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     @Override
     public int lastIndexOf(Object o) {
-        ensureInited();
+        ensureInitialized();
 
         if (o == null) throw new NullPointerException();
         if (!type.isInstance(o)) throw new ClassCastException();
 
         T t = type.cast(o);
 
-        int rightIx = findRightLast(t);
-        if (rightIx != -1) return rightIx;
+        cacheUntilIx(wrpEndIx);
 
-        int middleIx = findMiddleLast(t);
-        if (middleIx != -1) return middleIx;
+        for (int i = sizeOfCache - 1; i > -1; i--) {
+            if (cache.get(i).equals(t)) return i;
+        }
 
-        return findLeftLast(t);
+        return -1;
     }
 
     @NotNull
     @Override
     public ListIterator<T> listIterator() {
-        ensureInited();
+        ensureInitialized();
         return new ListWrapperListIterator<>(this, 0);
     }
 
     @NotNull
     @Override
     public ListIterator<T> listIterator(int index) {
-        ensureInited();
+        ensureInitialized();
         return new ListWrapperListIterator<>(this, index);
     }
 
     @NotNull
     @Override
     public List<T> subList(int fromIndex, int toIndex) {
-        ensureInited();
+        ensureInitialized();
 
         if (fromIndex < 0 || toIndex > sizeOfCache || fromIndex > toIndex) throw new IndexOutOfBoundsException();
 
-        int newSize = toIndex - fromIndex;
+        List<T> subList = new ArrayList<>();
+        cacheUntilIx(toIndex - 1);
 
-        SymbolicList<T> newCache = Engine.makeFullySymbolicList();
-        Engine.assume(newCache != null);
-        cache.copy(newCache, fromIndex, 0, newSize);
+        int newSize = 0;
+        for (int i = fromIndex; i < toIndex; i++) subList.add(get(i));
 
-        int startDif = wrpStartIx - fromIndex;
-        int endDif = wrpEndIx - toIndex;
-
-        int newWrpStartIx = Math.max(startDif, 0);
-        int newWrpEndIx = endDif < 0 ? newSize - endDif : newSize;
-
-        int newTblStartIx = startDif < 0 ? tblStartIx + startDif : tblStartIx;
-        int newTblEndIx = endDif < 0 ? tblEndIx : tblEndIx - endDif;
-
-        Iterator<T> newTblIter = table.iterator();
-        for (int i = 0; i < tblStartIx; i++) newTblIter.next();
-
-        Iterator<T> newBackTblIter = table.backIterator();
-        for (int i = sizeOfCache - 1; tblEndIx <= i; i--) newBackTblIter.next();
-
-        return new ListWrapper<>(
-                table,
-                newTblStartIx,
-                newTblEndIx,
-                type,
-                newTblIter,
-                newBackTblIter,
-                newCache,
-                newSize,
-                newWrpStartIx,
-                newWrpEndIx,
-                0,
-                false
-        );
-    }
-
-    public T first() {
-        return table.first();
+        return subList;
     }
 }

@@ -12,10 +12,10 @@ public class FiltredIterator<T> implements Iterator<T> {
     public Iterator<T> tblIter;
     public T curr;
 
-    public FiltredIterator(FiltredTable<T> filtredTable, boolean reversed) {
+    public FiltredIterator(FiltredTable<T> filtredTable) {
         this.filtredTable = filtredTable;
         ITable<T> table = filtredTable.table;
-        this.tblIter = reversed ? table.backIterator() : table.iterator();
+        this.tblIter = table.iterator();
         this.curr = null;
     }
 

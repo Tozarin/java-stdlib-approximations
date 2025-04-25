@@ -12,21 +12,14 @@ public class FlatIterator<T> implements Iterator<T> {
     Iterator<ITable<T>> iters;
     Iterator<T> currIter;
 
-    boolean reversed;
-
     public FlatIterator(FlatTable<T> flat) {
-        this(flat, false);
-    }
-
-    public FlatIterator(FlatTable<T> flat, boolean reversed) {
-        this.iters = reversed ? flat.tables.backIterator() : flat.tables.iterator();
+        this.iters = flat.tables.iterator();
         this.currIter = null;
-        this.reversed = reversed;
     }
 
     private void nextCurr() {
         ITable<T> next = iters.next();
-        currIter = reversed ? next.backIterator() : next.iterator();
+        currIter = next.iterator();
     }
 
     @Override

@@ -15,34 +15,28 @@ public class BaseTableIterator<V> implements Iterator<Object[]> {
     int ix;
     int endIx;
 
-    boolean reversed;
     Object[] curr;
 
     ArrayList<V> returnedIds;
 
-    public BaseTableIterator(BaseTable<V> table) {
-        this(table, false);
-    }
-
     @SuppressWarnings("unchecked")
-    public BaseTableIterator(BaseTable<V> table, boolean reversed) {
+    public BaseTableIterator(BaseTable<V> table) {
         this.table = table;
 
-        this.ix = reversed ? table.size() - 1 : 0;
+        this.ix = 0;
         this.endIx = table.size();
 
-        this.reversed = reversed;
         this.curr = null;
 
         this.returnedIds = new ArrayList<>();
     }
 
     private int nextIndex() {
-        return reversed ? ix-- : ix++;
+        return ix++;
     }
 
     private boolean condition() {
-        return reversed ? ix < 0 : endIx <= ix;
+        return endIx <= ix;
     }
 
     private void ensureId(V id) {

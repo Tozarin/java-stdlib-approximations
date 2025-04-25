@@ -11,7 +11,6 @@ public class RangeDeletedTableIterator<V> implements Iterator<Object[]> {
 
     public RangeDeletedTable<V> table;
     public Iterator<Object[]> tableIter;
-    public boolean reversed;
 
     int currSavedIx;
     public SymbolicMap<V, Object[]> savedRowsCopy;
@@ -21,14 +20,11 @@ public class RangeDeletedTableIterator<V> implements Iterator<Object[]> {
     public Object[] curr;
     public boolean isEnded;
 
-    public RangeDeletedTableIterator(RangeDeletedTable<V> table) { this(table, false); }
-
-    public RangeDeletedTableIterator(RangeDeletedTable<V> table, boolean reversed) {
+    public RangeDeletedTableIterator(RangeDeletedTable<V> table) {
         this.table = table;
-        this.tableIter = reversed ? table.backIterator() : table.iterator();
-        this.reversed = reversed;
+        this.tableIter = table.iterator();
 
-        this.currSavedIx = reversed ? table.currSaveIx : 0;
+        this.currSavedIx = 0;
         this.savedRowsCopy = Engine.makeSymbolicMap();
         savedRowsCopy.merge(table.savedRows);
         this.savedRowsStatusCopy = Engine.makeSymbolicMap();
@@ -40,8 +36,8 @@ public class RangeDeletedTableIterator<V> implements Iterator<Object[]> {
         this.isEnded = false;
     }
 
-    public int nextSavedIx() { return reversed ? currSavedIx-- : currSavedIx++; }
-    public boolean hasNextSaved() { return reversed ? currSavedIx >= 0 : currSavedIx <= table.currSaveIx; }
+    public int nextSavedIx() { return currSavedIx++; }
+    public boolean hasNextSaved() { return currSavedIx <= table.currSaveIx; }
 
     @Override
     @SuppressWarnings("unchecked")

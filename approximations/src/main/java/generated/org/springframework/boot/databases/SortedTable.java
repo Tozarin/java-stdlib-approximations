@@ -192,12 +192,6 @@ public class SortedTable<T, R> implements ITable<T> {
         return new SortedIterator();
     }
 
-    @NotNull
-    @Override
-    public Iterator<T> backIterator() {
-        return new SortedBackIterator();
-    }
-
     @Override
     public Class<T> type() {
         return table.type();

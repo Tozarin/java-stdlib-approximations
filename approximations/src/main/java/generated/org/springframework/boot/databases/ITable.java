@@ -6,8 +6,6 @@ public interface ITable<T> extends Iterable<T> {
 
     int size();
 
-    Iterator<T> backIterator();
-
     Class<T> type();
 
     T first();

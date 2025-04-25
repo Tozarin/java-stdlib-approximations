@@ -23,9 +23,6 @@ public class BaseTablePureSave<V> extends AChainedBaseTable<V> {
     @Override
     public int size() { return table.size() + 1; }
 
-    @Override
-    public Iterator<Object[]> backIterator() { return new BaseTablePureIterator<>(this); }
-
     @NotNull
     @Override
     public Iterator<Object[]> iterator() { return new BaseTablePureIterator<>(this); }

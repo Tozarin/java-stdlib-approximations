@@ -60,11 +60,6 @@ public class NoIdTable extends ANoIdTable {
     }
 
     @Override
-    public Iterator<Object[]> backIterator() {
-        return new NoIdIterator(this);
-    }
-
-    @Override
     public Class<Object[]> type() {
         return Object[].class;
     }

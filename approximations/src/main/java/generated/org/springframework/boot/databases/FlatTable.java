@@ -30,26 +30,16 @@ public class FlatTable<T> implements ITable<T> {
     public int size() {
         if (size != -1) return size;
 
-        Iterator<ITable<T>> iter = tables.iterator();
-        if (iter.hasNext()) {
-            return tables.size() * iter.next().size();
-        }
-        else {
-            return 0;
-        }
+        int count = 0;
+        for (ITable<T> tbl : tables) count += tbl.size();
+
+        size = count;
+        return count;
     }
 
     @NotNull
     @Override
-    public Iterator<T> iterator() {
-        return new FlatIterator<>(this);
-    }
-
-    @NotNull
-    @Override
-    public Iterator<T> backIterator() {
-        return new FlatIterator<>(this, true);
-    }
+    public Iterator<T> iterator() { return new FlatIterator<>(this); }
 
     @Override
     public Class<T> type() {

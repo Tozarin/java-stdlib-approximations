@@ -16,18 +16,12 @@ public class JoinedIterator<L, R> implements Iterator<Object[]> {
     L currLeft;
     Object[] currComposited;
 
-    boolean reversed;
     boolean isEmpty;
     boolean findedRight;
 
     public JoinedIterator(JoinedTable<L, R> joinedTable) {
-        this(joinedTable, false);
-    }
-
-    public JoinedIterator(JoinedTable<L, R> joinedTable, boolean reversed) {
         this.joinedTable = joinedTable;
 
-        this.reversed = reversed;
         this.findedRight = false;
 
         resetLeftIter();
@@ -39,13 +33,9 @@ public class JoinedIterator<L, R> implements Iterator<Object[]> {
         this.currComposited = null;
     }
 
-    private void resetLeftIter() {
-        leftIter = reversed ? joinedTable.leftTable.backIterator() : joinedTable.leftTable.iterator();
-    }
+    private void resetLeftIter() { leftIter = joinedTable.leftTable.iterator(); }
 
-    private void resetRightIter() {
-        rightIter = reversed ? joinedTable.rightTable.backIterator() : joinedTable.rightTable.iterator();
-    }
+    private void resetRightIter() { rightIter = joinedTable.rightTable.iterator(); }
 
     @Override
     public boolean hasNext() {

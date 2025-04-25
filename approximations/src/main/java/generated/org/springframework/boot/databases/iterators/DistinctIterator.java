@@ -5,7 +5,6 @@ import org.usvm.api.Engine;
 
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.util.Set;
 
 public class DistinctIterator<T> implements Iterator<T> {
@@ -16,11 +15,7 @@ public class DistinctIterator<T> implements Iterator<T> {
     Set<T> cache;
 
     public DistinctIterator(ITable<T> table) {
-        this(table, false);
-    }
-
-    public DistinctIterator(ITable<T> table, boolean reversed) {
-        this.tblIter = reversed ? table.backIterator() : table.iterator();
+        this.tblIter = table.iterator();
         this.curr = null;
         this.cache = new HashSet<>();
     }
