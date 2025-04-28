@@ -1,16 +1,19 @@
 package generated.org.springframework.http;
 
 import generated.org.springframework.boot.pinnedValues.PinnedValueSource;
+import generated.org.springframework.boot.pinnedValues.PinnedValueStorage;
 import org.jacodb.approximation.annotation.Approximate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.lang.Nullable;
 import stub.java.util.map.RequestMap;
 
+import static generated.org.springframework.boot.pinnedValues.PinnedValueSource.REQUEST_CONTENT_TYPE;
+
 @Approximate(HttpHeaders.class)
 public class HttpHeadersImpl {
     private final RequestMap fakeHeaders = new RequestMap(PinnedValueSource.REQUEST_HEADER);
-    
+
     public void set(String headerName, @Nullable String headerValue) {
         fakeHeaders.set(headerName, headerValue);
     }
@@ -18,7 +21,8 @@ public class HttpHeadersImpl {
     @Nullable
     public MediaType getContentType() {
         // TODO: Make symbolic with pre-defined values that will be accepted by respective message converter
-        String value = "application/json";
-        return MediaType.parseMediaType(value);
+        MediaType mediaType = MediaType.APPLICATION_JSON;
+        PinnedValueStorage.writePinnedValue(REQUEST_CONTENT_TYPE, mediaType);
+        return mediaType;
     }
 }
