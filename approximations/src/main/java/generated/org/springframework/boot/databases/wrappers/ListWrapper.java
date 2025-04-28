@@ -172,16 +172,12 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
     @Override
     public ITable<T> unwrap() { return table; }
 
-    private int cachedSize = -1;
     @Override
     public int size() {
         ensureInitialized();
-        if (cachedSize != -1) return cachedSize;
 
         int count = 0;
         for (T ignored : this) count++;
-
-        cachedSize = count;
         return count;
     }
 
@@ -501,9 +497,13 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
         List<T> subList = new ArrayList<>();
         cacheUntilIx(toIndex - 1);
 
-        int newSize = 0;
         for (int i = fromIndex; i < toIndex; i++) subList.add(get(i));
 
         return subList;
+    }
+
+    public T first() {
+        Iterator<T> iter = iterator();
+        return iter.hasNext() ? iter.next() : null;
     }
 }
