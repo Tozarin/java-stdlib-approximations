@@ -253,7 +253,7 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
             }
         }
 
-        SpringApplicationImpl._internalLog("Warning! Collection type was not supported!", collectionType.toString());
+        SpringApplicationImpl._internalLog("Warning! Collection type was not supported!", collectionType.getInternalClass().getName());
         Engine.assume(false);
         throw new IllegalArgumentException("Unsupported collection type");
     }
