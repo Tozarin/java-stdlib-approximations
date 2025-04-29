@@ -5,6 +5,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import generated.java.lang.StringImpl;
 import org.usvm.api.Engine;
 import org.usvm.api.SymbolicIdentityMap;
 import org.usvm.api.SymbolicList;
@@ -96,6 +97,35 @@ public final class LibSLRuntime {
         return v ? "true" : "false";
     }
 
+    private static byte digitToByte(long i) {
+        return (byte) ('0' + i);
+    }
+
+    private static String numberToString(long n, int buffSize) {
+        byte[] bytes = new byte[buffSize];
+
+        final boolean isNegative = n < 0;
+        if (isNegative)
+            n = -n;
+
+        int len = 0;
+        int pos = buffSize;
+        while (n != 0) {
+            pos--;
+            len++;
+            bytes[pos] = digitToByte(n % 10);
+            n /= 10;
+        }
+
+        if (isNegative) {
+            pos--;
+            len++;
+            bytes[pos] = '-';
+        }
+
+        return new String(bytes, pos, len);
+    }
+
     @SuppressWarnings("ConstantConditions")
     public static String toString(byte v) {
         if (v == 0) return "0";
@@ -106,28 +136,7 @@ public final class LibSLRuntime {
         Engine.assume(v > Byte.MIN_VALUE);
         Engine.assume(v < Byte.MAX_VALUE);
 
-        final char[] chars = new char[BUFF_SIZE_BYTE];
-
-        final boolean isNegative = v < 0;
-        if (isNegative)
-            v = (byte) -v;
-
-        int len = 0;
-        int pos = BUFF_SIZE_BYTE;
-        while (v != 0) {
-            pos--;
-            len++;
-            chars[pos] = (char) ('0' + (v % 10));
-            v /= 10;
-        }
-
-        if (isNegative) {
-            pos--;
-            len++;
-            chars[pos] = '-';
-        }
-
-        return new String(chars, pos, len);
+        return numberToString(v, BUFF_SIZE_BYTE);
     }
 
     @SuppressWarnings("ConstantConditions")
@@ -140,28 +149,7 @@ public final class LibSLRuntime {
         Engine.assume(v > Short.MIN_VALUE);
         Engine.assume(v < Short.MAX_VALUE);
 
-        final char[] chars = new char[BUFF_SIZE_SHORT];
-
-        final boolean isNegative = v < 0;
-        if (isNegative)
-            v = (short) -v;
-
-        int len = 0;
-        int pos = BUFF_SIZE_SHORT;
-        while (v != 0) {
-            pos--;
-            len++;
-            chars[pos] = (char) ('0' + (v % 10));
-            v /= 10;
-        }
-
-        if (isNegative) {
-            pos--;
-            len++;
-            chars[pos] = '-';
-        }
-
-        return new String(chars, pos, len);
+        return numberToString(v, BUFF_SIZE_SHORT);
     }
 
     @SuppressWarnings("ConstantConditions")
@@ -174,28 +162,7 @@ public final class LibSLRuntime {
         Engine.assume(v > Integer.MIN_VALUE);
         Engine.assume(v < Integer.MAX_VALUE);
 
-        final char[] chars = new char[BUFF_SIZE_INT];
-
-        final boolean isNegative = v < 0;
-        if (isNegative)
-            v = -v;
-
-        int len = 0;
-        int pos = BUFF_SIZE_INT;
-        while (v != 0) {
-            pos--;
-            len++;
-            chars[pos] = (char) ('0' + (v % 10));
-            v /= 10;
-        }
-
-        if (isNegative) {
-            pos--;
-            len++;
-            chars[pos] = '-';
-        }
-
-        return new String(chars, pos, len);
+        return numberToString(v, BUFF_SIZE_INT);
     }
 
     @SuppressWarnings("ConstantConditions")
@@ -208,39 +175,17 @@ public final class LibSLRuntime {
         Engine.assume(v > Long.MIN_VALUE);
         Engine.assume(v < Long.MAX_VALUE);
 
-        final char[] chars = new char[BUFF_SIZE_LONG];
-
-        final boolean isNegative = v < 0;
-        if (isNegative)
-            v = -v;
-
-        int len = 0;
-        int pos = BUFF_SIZE_LONG;
-        while (v != 0) {
-            pos--;
-            len++;
-            chars[pos] = (char) ('0' + (v % 10));
-            v /= 10;
-        }
-
-        if (isNegative) {
-            pos--;
-            len++;
-            chars[pos] = '-';
-        }
-
-        return new String(chars, pos, len);
+        return numberToString(v, BUFF_SIZE_LONG);
     }
 
-    public static String toString(final char v) {
-        return new String(new char[] { v });
+    public static String toString(char v) {
+        return new String(StringImpl._charToBytes(v));
     }
 
     // TODO: do we need more variants for other primitive array types?
-    public static String toString(final char[] v) {
-        return new String(v);
+    public static String toString(char[] v) {
+        return new String(StringImpl._getBytes(v));
     }
-
 
     private static final float FLOAT_MULTIPLIER_REGULAR = 1e+6f; // 8 decimal positions
     private static final int FLOAT_MULTIPLIER_REGULAR_count = 6;

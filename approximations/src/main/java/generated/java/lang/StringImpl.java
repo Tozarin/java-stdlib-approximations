@@ -148,10 +148,20 @@ public class StringImpl implements Serializable {
     }
 
     public StringImpl(byte[] bytes) {
-        int len = bytes.length;
-        this.value = new byte[len];
+        this(bytes, 0, bytes.length);
+    }
+
+    private static void _checkBoundsOffCount(int offset, int count, int length) {
+        if (offset < 0 || count < 0 || offset > length - count) {
+            throw new StringIndexOutOfBoundsException();
+        }
+    }
+
+    public StringImpl(byte[] bytes, int offset, int length) {
+        _checkBoundsOffCount(offset, length, bytes.length);
+        this.value = new byte[length];
         this.coder = _currentCoder();
-        LibSLRuntime.ArrayActions.copy(bytes, 0, this.value, 0, len);
+        LibSLRuntime.ArrayActions.copy(bytes, offset, this.value, 0, length);
     }
 
     public static StringImpl copyValueOf(char[] data) {
