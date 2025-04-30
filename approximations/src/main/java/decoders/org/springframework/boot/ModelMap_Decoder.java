@@ -163,8 +163,23 @@ public class ModelMap_Decoder implements ObjectDecoder {
 
         while (length > 0) {
             T key = map.anyKey();
-            InternalMapEntry<T, T> entry = (InternalMapEntry<T, T>) map.get(key);
-            T value = entry.getValue();
+            T value = map.get(key);
+            if (value instanceof InternalMapEntry) {
+                value = ((InternalMapEntry<T, T>) value).getValue();
+            } else {
+                JcMethod stringCtor = null;
+                JcClassOrInterface stringClass = approximation.getClasspath().findClassOrNull("java.lang.String");
+                List<JcMethod> stringMethods = stringClass.getDeclaredMethods();
+                for (int i = 0, c = stringMethods.size(); i != c; i++) {
+                    JcMethod method = stringMethods.get(i);
+                    if (!method.isConstructor() || !method.getParameters().isEmpty())
+                        continue;
+
+                    stringCtor = method;
+                }
+                ArrayList<T> args = new ArrayList<>();
+                key = decoder.invokeMethod(stringCtor, args);
+            }
 
             List<T> args = new ArrayList<>();
             args.add(outputInstance);

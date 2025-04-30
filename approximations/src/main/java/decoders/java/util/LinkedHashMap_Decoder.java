@@ -137,8 +137,10 @@ public class LinkedHashMap_Decoder implements ObjectDecoder {
 
         while (length > 0) {
             T key = map.anyKey();
-            InternalMapEntry<T, T> entry = (InternalMapEntry<T, T>) map.get(key);
-            T value = entry.getValue();
+            T value = map.get(key);
+            if (value instanceof InternalMapEntry) {
+                value = ((InternalMapEntry<T, T>) value).getValue();
+            }
 
             List<T> args = new ArrayList<>();
             args.add(outputInstance);
