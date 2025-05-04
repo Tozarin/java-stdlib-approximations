@@ -9,7 +9,7 @@ public class DatabaseSupportFunctions {
     // region Comparers
 
     static Integer basicComparer(Object left, Object right) {
-        if (left == null && right == null) return 0;
+        if (left == null && right == null) return null;
         if (left == null) return -1;
         if (right == null) return 1;
         return null;
@@ -21,7 +21,7 @@ public class DatabaseSupportFunctions {
     }
     static Integer comparer(Integer left, Integer right) {
         Integer base = basicComparer(left, right);
-        return base == null ? left.compareTo(right) : base;
+        return base == null ? left - right : base;
     }
     static Integer comparer(Long left, Long right) {
         Integer base = basicComparer(left, right);

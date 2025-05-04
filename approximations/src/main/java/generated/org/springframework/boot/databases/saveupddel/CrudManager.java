@@ -6,11 +6,11 @@ import generated.org.springframework.boot.databases.iterators.utils.IteratorWith
 import generated.org.springframework.boot.databases.wrappers.ListWrapper;
 import generated.org.springframework.boot.databases.wrappers.SetWrapper;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
 // T - type of dataclass, V - type of id field
@@ -77,6 +77,17 @@ public class CrudManager<T, V> {
     public List<T> findAll_java_util_List() {
         MappedTable<Object[], T> mapped = new MappedTable<>(table, deserializer, genericType);
         return new ListWrapper<>(mapped);
+    }
+
+    public Collection<T> findAll_java_util_Collection() {
+        MappedTable<Object[], T> mapped = new MappedTable<>(table, deserializer, genericType);
+        return new ListWrapper<>(mapped);
+    }
+
+    public Page<T> findAll_org_springframework_data_domain_Page(Pageable pageable) {
+        MappedTable<Object[], T> mapped = new MappedTable<>(table, deserializer, genericType);
+        List<T> list = new ListWrapper<>(mapped);
+        return new PageImpl<T>(list, pageable, list.size());
     }
 
     public Set<T> findAll_java_util_Set() {

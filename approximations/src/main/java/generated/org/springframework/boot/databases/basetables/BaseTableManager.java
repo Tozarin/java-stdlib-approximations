@@ -1,5 +1,6 @@
 package generated.org.springframework.boot.databases.basetables;
 
+import jakarta.validation.ConstraintValidator;
 import org.jetbrains.annotations.NotNull;
 import org.usvm.api.Engine;
 
@@ -10,8 +11,14 @@ public class BaseTableManager<V> extends ABaseTable<V> implements ITableManager 
 
     public ABaseTable<V> tablesChain;
 
-    public BaseTableManager(int idIndex, Class<?>... columnTypes) {
-        this.tablesChain = new BaseTable<>(idIndex, columnTypes);
+    public BaseTableManager(
+            int idIndex,
+            Class<?>[] columnTypes,
+            ConstraintValidator<?, ?>[][] validators
+    ) {
+        BaseTable<V> base = new BaseTable<>(idIndex, columnTypes);
+
+        this.tablesChain = new BaseTableCommonValidate<>(base, validators);
     }
 
     @Override
