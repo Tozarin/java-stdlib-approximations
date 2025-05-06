@@ -98,7 +98,6 @@ public class JoinedTable<L, R> implements ITable<Object[]> {
 
     // r is null when isLeft and onMethod is false for all rs
     public Object[] composite(L l, R r) {
-
         if (l != null && r != null) {
 
             Object[] lRow = serializeLeft(l);
@@ -111,6 +110,9 @@ public class JoinedTable<L, R> implements ITable<Object[]> {
 
             return row;
         }
+
+        if (l != null) return serializeLeft(l);
+        if (r != null) return serializeRight(r);
 
         return null;
     }

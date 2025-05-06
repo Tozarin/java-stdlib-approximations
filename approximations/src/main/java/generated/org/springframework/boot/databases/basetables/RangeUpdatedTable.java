@@ -44,11 +44,15 @@ public class RangeUpdatedTable<V> extends AChainedBaseTable<V> {
     }
 
     @Override
-    public int size() { return currSize; }
+    public int size() {
+        return currSize;
+    }
 
     @NotNull
     @Override
-    public Iterator<Object[]> iterator() { return new RangeUpdatedTableIterator<>(this); }
+    public Iterator<Object[]> iterator() {
+        return new RangeUpdatedTableIterator<>(this);
+    }
 
     @Override
     public void deleteAll() {

@@ -25,7 +25,6 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
     public int modCount;
 
     public SetWrapper(ITable<T> table) {
-
         this.table = table;
         this.tblIter = this.table.iterator();
         this.ptr = 0;
@@ -52,7 +51,6 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
     }
 
     public T cacheNext() {
-
         if (ptr == getSizeOfTable()) return null;
 
         T t = tblIter.next();
@@ -69,7 +67,6 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
     }
 
     public T cacheUntil(T t) {
-
         T cached = cacheNext();
         while (cached != null && cached != t && !cached.equals(t)) {
             cached = cacheNext();
@@ -78,7 +75,6 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
     }
 
     public boolean cacheUntilCached() {
-
         if (ptr == getSizeOfTable()) return false;
         if (cacheNext() != null) return true;
 
@@ -87,16 +83,18 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
 
     @Override
     public int size() {
-
         int count = 0;
-        for (T ignored : this) { count++; }
+        Iterator<T> iter = iterator();
+        while (iter.hasNext()) {
+            T ignored = iter.next();
+            count++;
+        }
 
         return count;
     }
 
     @Override
     public boolean isEmpty() {
-
         if (ptr == getSizeOfTable()) {
             return sizeOfCache == 0;
         }
@@ -107,7 +105,6 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
     @Override
     @SuppressWarnings("unchecked")
     public boolean contains(Object o) {
-
         if (removedCache.contains(o)) return false;
         if (cache.contains(o)) return true;
 
@@ -124,11 +121,14 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
 
     @Override
     public Object[] toArray() {
-
         Object[] a = new Object[size()];
 
         int ix = 0;
-        for (T t : this) a[ix++] = t;
+        Iterator<T> iter = iterator();
+        while (iter.hasNext()) {
+            T t = iter.next();
+            a[ix++] = t;
+        }
 
         return a;
     }
@@ -136,7 +136,6 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
     @Override
     @SuppressWarnings("unchecked")
     public <T1> T1[] toArray(T1[] a) {
-
         Class<?> genericType = a.getClass().componentType();
 
         //if (!genericType.isAssignableFrom(type)) throw new ArrayStoreException();
@@ -156,7 +155,6 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
 
     @Override
     public boolean add(T t) {
-
         boolean c = contains(t);
         if (!c) modCount++;
 
@@ -169,7 +167,6 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
     @Override
     @SuppressWarnings("unchecked")
     public boolean remove(Object o) {
-
         boolean c = contains((T) o);
         if (c) modCount++;
 
@@ -181,19 +178,25 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
 
     @Override
     public boolean containsAll(Collection<?> c) {
-
-        for (Object o : c) if (!contains(o)) return false;
+        Iterator<?> iter = c.iterator();
+        while (iter.hasNext()) {
+            Object o = iter.next();
+            if (!contains(o)) return false;
+        }
 
         return true;
     }
 
     @Override
     public boolean addAll(Collection<? extends T> c) {
-
         if (c.isEmpty()) return false;
 
         boolean isChanged = false;
-        for (T t : c) isChanged |= add(t);
+        Iterator<? extends T> iter = c.iterator();
+        while (iter.hasNext()) {
+            T t = iter.next();
+            isChanged |= add(t);
+        }
 
         if (isChanged) modCount++;
 
@@ -203,11 +206,12 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
     @Override
     @SuppressWarnings("unchecked")
     public boolean retainAll(Collection<?> c) {
-
         Set<T> newCache = new HashSet<>();
         int sizeOfNewCache = 0;
 
-        for (Object o : c) {
+        Iterator<?> iter = c.iterator();
+        while (iter.hasNext()) {
+            Object o = iter.next();
             if (contains(o)) {
                 newCache.add((T) o);
                 sizeOfNewCache++;
@@ -231,11 +235,14 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
 
     @Override
     public boolean removeAll(Collection<?> c) {
-
         if (c.isEmpty()) return false;
 
         boolean isChanged = false;
-        for (Object o : c) isChanged |= remove(o);
+        Iterator<?> iter = c.iterator();
+        while (iter.hasNext()) {
+            Object o = iter.next();
+            isChanged |= remove(o);
+        }
 
         if (isChanged) modCount++;
 
@@ -244,7 +251,6 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
 
     @Override
     public void clear() {
-
         cache.clear();
         removedCache.clear();
         sizeOfCache = 0;

@@ -35,8 +35,13 @@ public class RangeDeletedTableIterator<V> implements Iterator<Object[]> {
         this.isEnded = false;
     }
 
-    public int nextSavedIx() { return currSavedIx++; }
-    public boolean hasNextSaved() { return currSavedIx <= table.currSaveIx; }
+    public int nextSavedIx() {
+        return currSavedIx++;
+    }
+
+    public boolean hasNextSaved() {
+        return currSavedIx <= table.currSaveIx;
+    }
 
     @Override
     @SuppressWarnings("unchecked")

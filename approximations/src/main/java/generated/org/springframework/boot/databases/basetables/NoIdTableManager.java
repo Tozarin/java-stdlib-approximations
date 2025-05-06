@@ -9,7 +9,9 @@ public class NoIdTableManager extends ANoIdTable implements ITableManager {
 
     public ANoIdTable tablesChain;
 
-    public NoIdTableManager(Class<?>... columnTypes) { this.tablesChain = new NoIdTable(columnTypes); }
+    public NoIdTableManager(Class<?>... columnTypes) {
+        this.tablesChain = new NoIdTable(columnTypes);
+    }
 
     @Override
     public void applyRangeUpdate(Function<Object[], Boolean> predicate, Function<Object[], Object[]> update) {
@@ -22,27 +24,43 @@ public class NoIdTableManager extends ANoIdTable implements ITableManager {
     }
 
     @Override
-    public int size() { return tablesChain.size(); }
+    public int size() {
+        return tablesChain.size();
+    }
 
     @NotNull
     @Override
-    public Iterator<Object[]> iterator() { return tablesChain.iterator(); }
+    public Iterator<Object[]> iterator() {
+        return tablesChain.iterator();
+    }
 
     @Override
-    public Class<Object[]> type() { return tablesChain.type(); }
+    public Class<Object[]> type() {
+        return tablesChain.type();
+    }
 
     @Override
-    public int columnCount() { return tablesChain.columnCount(); }
+    public int columnCount() {
+        return tablesChain.columnCount();
+    }
 
     @Override
-    public Class<?>[] columnTypes() { return tablesChain.columnTypes(); }
+    public Class<?>[] columnTypes() {
+        return tablesChain.columnTypes();
+    }
 
     @Override
-    public void save(Object[] row) { tablesChain = new NoIdTableSave(tablesChain, row); }
+    public void save(Object[] row) {
+        tablesChain = new NoIdTableSave(tablesChain, row);
+    }
 
     @Override
-    public void delete(Object[] row) { tablesChain = new NoIdTableDelete(tablesChain, row); }
+    public void delete(Object[] row) {
+        tablesChain = new NoIdTableDelete(tablesChain, row);
+    }
 
     @Override
-    public void deleteAll() { tablesChain.deleteAll(); }
+    public void deleteAll() {
+        tablesChain.deleteAll();
+    }
 }

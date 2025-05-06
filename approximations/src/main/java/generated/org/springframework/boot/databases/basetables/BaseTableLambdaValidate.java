@@ -1,45 +1,39 @@
 package generated.org.springframework.boot.databases.basetables;
 
-import generated.org.springframework.boot.databases.iterators.basetables.NoIdTableDeleteIterator;
+import generated.org.springframework.boot.databases.iterators.basetables.BaseTableLambdaValidateIterator;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Iterator;
+import java.util.function.Function;
 
-public class NoIdTableDelete extends AChainedNoIdTable {
+public class BaseTableLambdaValidate<V> extends AChainedBaseTable<V> {
 
-    public Object[] deleted;
-    public int cachedSize;
+    public Function<Object, Boolean>[] validators;
 
-    public NoIdTableDelete(ANoIdTable table, Object[] deleted) {
+    public BaseTableLambdaValidate(ABaseTable<V> table, Function<Object, Boolean>[] validators) {
         this.table = table;
-        this.deleted = deleted;
-        cachedSize = -1;
+        this.validators = validators;
     }
 
     @Override
     public void deleteAll() {
         table.deleteAll();
-        deleted = null;
-        cachedSize = 0;
     }
 
     @Override
     public int size() {
-        if (cachedSize != -1) return cachedSize;
-
         int count = 0;
         Iterator<Object[]> iter = iterator();
         while (iter.hasNext()) {
             Object[] ignored = iter.next();
             count++;
         }
-        cachedSize = count;
         return count;
     }
 
     @NotNull
     @Override
     public Iterator<Object[]> iterator() {
-        return new NoIdTableDeleteIterator(this);
+        return new BaseTableLambdaValidateIterator<>(this);
     }
 }

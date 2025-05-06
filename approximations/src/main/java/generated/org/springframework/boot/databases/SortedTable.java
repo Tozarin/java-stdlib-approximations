@@ -163,27 +163,6 @@ public class SortedTable<T, R> implements ITable<T> {
         }
     }
 
-    class SortedBackIterator implements Iterator<T> {
-
-        int ix;
-
-        public SortedBackIterator() {
-            this.ix = size - 1;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return offset <= ix;
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public T next() {
-            if (!hasNext()) throw new NoSuchElementException();
-            return (T) sorted[ix--];
-        }
-    }
-
     @NotNull
     @Override
     public Iterator<T> iterator() {

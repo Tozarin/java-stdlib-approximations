@@ -31,27 +31,41 @@ public class BaseTable<V> extends ABaseTable<V> {
 
         this.data = new Object[columnCount][];
 
-        for (int i = 0; i < columnCount; i++) { data[i] = Engine.makeSymbolicArray(columnTypes[i], size); }
+        for (int i = 0; i < columnCount; i++) {
+            data[i] = Engine.makeSymbolicArray(columnTypes[i], size);
+        }
     }
 
     @Override
-    public int size() { return size; }
+    public int size() {
+        return size;
+    }
 
     @Override
-    public int idColumnIx() { return idIndex; }
+    public int idColumnIx() {
+        return idIndex;
+    }
 
     @Override
-    public int columnCount() { return columnCount; }
+    public int columnCount() {
+        return columnCount;
+    }
 
     @Override
-    public Class<?>[] columnTypes() { return columnTypes; }
+    public Class<?>[] columnTypes() {
+        return columnTypes;
+    }
 
     @Override
-    public Class<Object[]> type() { return Object[].class; }
+    public Class<Object[]> type() {
+        return Object[].class;
+    }
 
     @Override
     public void deleteAll() {
-        for (int i = 0; i < columnCount; i++) { data[i] = Engine.makeSymbolicArray(columnTypes[i], 0); }
+        for (int i = 0; i < columnCount; i++) {
+            data[i] = Engine.makeSymbolicArray(columnTypes[i], 0);
+        }
         this.size = 0;
     }
 
@@ -68,5 +82,7 @@ public class BaseTable<V> extends ABaseTable<V> {
 
     @NotNull
     @Override
-    public Iterator<Object[]> iterator() { return new BaseTableIterator<>(this); }
+    public Iterator<Object[]> iterator() {
+        return new BaseTableIterator<>(this);
+    }
 }

@@ -77,7 +77,6 @@ public class FiltredTable<T> implements ITable<T> {
     }
 
     public int size() {
-
         if (cacheSize != -1) return cacheSize;
 
         Iterator<T> iter = iterator();

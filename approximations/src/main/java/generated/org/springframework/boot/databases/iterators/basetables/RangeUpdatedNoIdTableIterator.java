@@ -40,8 +40,7 @@ public class RangeUpdatedNoIdTableIterator implements Iterator<Object[]> {
 
                     if (savedRowsCopy.get(curr)) {
                         savedRowsCopy.set(curr, false);
-                    }
-                    else {
+                    } else {
                         curr = null;
                         return hasNext();
                     }

@@ -17,13 +17,19 @@ public class BaseTableSave<V> extends AChainedBaseTable<V> {
     @Override
     public int size() {
         int count = 0;
-        for (Object[] ignored : this) count++;
+        Iterator<Object[]> iter = iterator();
+        while (iter.hasNext()) {
+            Object[] ignored = iter.next();
+            count++;
+        }
         return count;
     }
 
     @NotNull
     @Override
-    public Iterator<Object[]> iterator() { return new BaseTableSaveIterator<>(this); }
+    public Iterator<Object[]> iterator() {
+        return new BaseTableSaveIterator<>(this);
+    }
 
     @Override
     public void deleteAll() {
