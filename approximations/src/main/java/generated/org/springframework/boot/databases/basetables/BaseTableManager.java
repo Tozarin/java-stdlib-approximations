@@ -36,7 +36,9 @@ public class BaseTableManager<V> extends ABaseTable<V> implements ITableManager 
         tablesChain = new BaseTableEnsureSingleUpdate<>(tablesChain, symbId, pos, v);
     }
 
-    public void pureSave(Object[] row) { tablesChain = new BaseTablePureSave<>(tablesChain, row); }
+    public void pureSave(Object[] row) {
+        tablesChain = new BaseTablePureSave<>(tablesChain, row);
+    }
 
     @SuppressWarnings("unchecked")
     public V symbolizeId(V id) {
@@ -47,30 +49,48 @@ public class BaseTableManager<V> extends ABaseTable<V> implements ITableManager 
     }
 
     @Override
-    public int columnCount() { return tablesChain.columnCount(); }
+    public int columnCount() {
+        return tablesChain.columnCount();
+    }
 
     @Override
-    public Class<?>[] columnTypes() { return tablesChain.columnTypes(); }
+    public Class<?>[] columnTypes() {
+        return tablesChain.columnTypes();
+    }
 
     @Override
-    public int idColumnIx() { return tablesChain.idColumnIx(); }
+    public int idColumnIx() {
+        return tablesChain.idColumnIx();
+    }
 
     @Override
-    public int size() { return tablesChain.size(); }
+    public int size() {
+        return tablesChain.size();
+    }
 
     @NotNull
     @Override
-    public Iterator<Object[]> iterator() { return tablesChain.iterator(); }
+    public Iterator<Object[]> iterator() {
+        return tablesChain.iterator();
+    }
 
     @Override
-    public Class<Object[]> type() { return tablesChain.type(); }
+    public Class<Object[]> type() {
+        return tablesChain.type();
+    }
 
     @Override
-    public void save(Object[] row) { tablesChain = new BaseTableSave<>(tablesChain, row); }
+    public void save(Object[] row) {
+        tablesChain = new BaseTableSave<>(tablesChain, row);
+    }
 
     @Override
-    public void delete(Object[] row) { tablesChain = new BaseTableDelete<>(tablesChain, row); }
+    public void delete(Object[] row) {
+        tablesChain = new BaseTableDelete<>(tablesChain, row);
+    }
 
     @Override
-    public void deleteAll() { tablesChain.deleteAll(); }
+    public void deleteAll() {
+        tablesChain.deleteAll();
+    }
 }

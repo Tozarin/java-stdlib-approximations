@@ -19,7 +19,9 @@ public class BaseTableCommonValidate<V> extends AChainedBaseTable<V> {
     }
 
     @Override
-    public void deleteAll() { table.deleteAll(); }
+    public void deleteAll() {
+        table.deleteAll();
+    }
 
     @Override
     public int size() {
@@ -30,5 +32,7 @@ public class BaseTableCommonValidate<V> extends AChainedBaseTable<V> {
 
     @NotNull
     @Override
-    public Iterator<Object[]> iterator() { return new BaseTableCommonValidateIterator<>(this); }
+    public Iterator<Object[]> iterator() {
+        return new BaseTableCommonValidateIterator<>(this);
+    }
 }

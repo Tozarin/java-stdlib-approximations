@@ -19,34 +19,42 @@ public class DatabaseSupportFunctions {
         Integer base = basicComparer(left, right);
         return base == null ? left.compareTo(right) : base;
     }
+
     static Integer comparer(Integer left, Integer right) {
         Integer base = basicComparer(left, right);
         return base == null ? left - right : base;
     }
+
     static Integer comparer(Long left, Long right) {
         Integer base = basicComparer(left, right);
         return base == null ? left.compareTo(right) : base;
     }
+
     static Integer comparer(Boolean left, Boolean right) {
         Integer base = basicComparer(left, right);
         return base == null ? left.compareTo(right) : base;
     }
+
     static Integer comparer(Float left, Float right) {
         Integer base = basicComparer(left, right);
         return base == null ? left.compareTo(right) : base;
     }
+
     static Integer comparer(Double left, Double right) {
         Integer base = basicComparer(left, right);
         return base == null ? left.compareTo(right) : base;
     }
+
     static Integer comparer(BigInteger left, BigInteger right) {
         Integer base = basicComparer(left, right);
         return base == null ? left.compareTo(right) : base;
     }
+
     static Integer comparer(BigDecimal left, BigDecimal right) {
         Integer base = basicComparer(left, right);
         return base == null ? left.compareTo(right) : base;
     }
+
     static Integer comparer(LocalDateTime left, LocalDateTime right) {
         Integer base = basicComparer(left, right);
         return base == null ? left.compareTo(right) : base;
@@ -56,15 +64,41 @@ public class DatabaseSupportFunctions {
 
     // region Equals
 
-    static Boolean equals(String left, String right) { return left.equals(right); }
-    static Boolean equals(Integer left, Integer right) { return left.equals(right); }
-    static Boolean equals(Long left, Long right) { return left.equals(right); }
-    static Boolean equals(Boolean left, Boolean right) { return left.equals(right); }
-    static Boolean equals(Float left, Float right) { return left.equals(right); }
-    static Boolean equals(Double left, Double right) { return left.equals(right); }
-    static Boolean equals(BigInteger left, BigInteger right) { return left.equals(right); }
-    static Boolean equals(BigDecimal left, BigDecimal right) { return left.equals(right); }
-    static Boolean equals(LocalDateTime left, LocalDateTime right) { return left.equals(right); }
+    static Boolean equals(String left, String right) {
+        return left.equals(right);
+    }
+
+    static Boolean equals(Integer left, Integer right) {
+        return left.equals(right);
+    }
+
+    static Boolean equals(Long left, Long right) {
+        return left.equals(right);
+    }
+
+    static Boolean equals(Boolean left, Boolean right) {
+        return left.equals(right);
+    }
+
+    static Boolean equals(Float left, Float right) {
+        return left.equals(right);
+    }
+
+    static Boolean equals(Double left, Double right) {
+        return left.equals(right);
+    }
+
+    static Boolean equals(BigInteger left, BigInteger right) {
+        return left.equals(right);
+    }
+
+    static Boolean equals(BigDecimal left, BigDecimal right) {
+        return left.equals(right);
+    }
+
+    static Boolean equals(LocalDateTime left, LocalDateTime right) {
+        return left.equals(right);
+    }
 
     // endregion
 

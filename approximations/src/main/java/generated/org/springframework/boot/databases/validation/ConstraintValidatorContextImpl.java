@@ -16,7 +16,9 @@ public class ConstraintValidatorContextImpl implements ConstraintValidatorContex
     }
 
     @Override
-    public ClockProvider getClockProvider() { return new ClockProviderImpl(); }
+    public ClockProvider getClockProvider() {
+        return new ClockProviderImpl();
+    }
 
     // TODO: need to approx?
     @Override

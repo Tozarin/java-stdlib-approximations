@@ -41,7 +41,9 @@ public class RangeDeletedTable<V> extends AChainedBaseTable<V> {
 
     @NotNull
     @Override
-    public Iterator<Object[]> iterator() { return new RangeDeletedTableIterator<>(this); }
+    public Iterator<Object[]> iterator() {
+        return new RangeDeletedTableIterator<>(this);
+    }
 
     @Override
     public void deleteAll() {

@@ -31,7 +31,9 @@ public class RangeDeletedNoIdTable extends AChainedNoIdTable {
 
     @NotNull
     @Override
-    public Iterator<Object[]> iterator() { return new RangeDeletedNoIdTableIterator(this); }
+    public Iterator<Object[]> iterator() {
+        return new RangeDeletedNoIdTableIterator(this);
+    }
 
     @Override
     public void deleteAll() {

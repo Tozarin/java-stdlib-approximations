@@ -32,5 +32,7 @@ public class SingletonTable<T> implements ITable<T> {
     }
 
     @Override
-    public T first() { return data; }
+    public T first() {
+        return data;
+    }
 }

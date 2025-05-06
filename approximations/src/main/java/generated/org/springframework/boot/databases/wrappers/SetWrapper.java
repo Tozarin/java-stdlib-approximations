@@ -89,7 +89,9 @@ public class SetWrapper<T> implements Set<T>, IWrapper<T> {
     public int size() {
 
         int count = 0;
-        for (T ignored : this) { count++; }
+        for (T ignored : this) {
+            count++;
+        }
 
         return count;
     }

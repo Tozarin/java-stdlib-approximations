@@ -25,7 +25,9 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
     public int modCount;
     private boolean initialized = false;
 
-    public ListWrapper(ITable<T> table) { this.table = table; }
+    public ListWrapper(ITable<T> table) {
+        this.table = table;
+    }
 
     // table, * - cached, 0 - uncached
     // |0|1|...|tblStIx-1|tblStIx|tblStIx+1|...|size-1|
@@ -170,7 +172,9 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
     // endregion
 
     @Override
-    public ITable<T> unwrap() { return table; }
+    public ITable<T> unwrap() {
+        return table;
+    }
 
     @Override
     public int size() {
@@ -182,7 +186,9 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
     }
 
     @Override
-    public boolean isEmpty() { return size() == 0; }
+    public boolean isEmpty() {
+        return size() == 0;
+    }
 
     @Override
     public boolean contains(Object o) {

@@ -46,7 +46,9 @@ public class SaveUpdDelManyManager<T, V1, V2> {
         this.shouldShuffle = shouldShuffle;
     }
 
-    public V2 getId(T t) { return getTId.apply(t); }
+    public V2 getId(T t) {
+        return getTId.apply(t);
+    }
 
     public void setShouldShuffle(int shouldShuffle) {
         this.shouldShuffle = shouldShuffle;

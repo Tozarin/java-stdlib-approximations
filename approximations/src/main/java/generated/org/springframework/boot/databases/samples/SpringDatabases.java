@@ -13,10 +13,10 @@ public class SpringDatabases {
     // plz do not delete
     public static BaseTableManager<Integer> _blank = new BaseTableManager<>(
             1,
-            new Class<?>[] { String.class, Integer.class },
+            new Class<?>[]{String.class, Integer.class},
             new ConstraintValidator<?, ?>[][]{
-                    new ConstraintValidator<?, ?>[] { new NotBlankValidator() },
-                    new ConstraintValidator<?, ?>[] {
+                    new ConstraintValidator<?, ?>[]{new NotBlankValidator()},
+                    new ConstraintValidator<?, ?>[]{
                             new PositiveValidatorForInteger(),
                             new DigitsValidatorForNumber()
                     }

@@ -32,8 +32,7 @@ public class BaseTableSaveIterator<V> implements Iterator<Object[]> {
             Engine.assume(saved != null);
             row = saved;
             saved = null;
-        }
-        else {
+        } else {
             row = tblIter.next();
             if (saved != null && row[table.idColumnIx()].equals(saved[table.idColumnIx()])) {
                 row = saved;

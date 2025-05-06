@@ -32,9 +32,13 @@ public class JoinedIterator<L, R> implements Iterator<Object[]> {
         this.currComposited = null;
     }
 
-    private void resetLeftIter() { leftIter = joinedTable.leftTable.iterator(); }
+    private void resetLeftIter() {
+        leftIter = joinedTable.leftTable.iterator();
+    }
 
-    private void resetRightIter() { rightIter = joinedTable.rightTable.iterator(); }
+    private void resetRightIter() {
+        rightIter = joinedTable.rightTable.iterator();
+    }
 
     @Override
     public boolean hasNext() {

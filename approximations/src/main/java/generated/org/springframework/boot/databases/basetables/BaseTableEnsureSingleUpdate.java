@@ -25,9 +25,13 @@ public class BaseTableEnsureSingleUpdate<V> extends AChainedBaseTable<V> {
     }
 
     @Override
-    public int size() { return table.size(); }
+    public int size() {
+        return table.size();
+    }
 
     @NotNull
     @Override
-    public Iterator<Object[]> iterator() { return new BaseTableEnsureSingleUpdateIterator<>(this); }
+    public Iterator<Object[]> iterator() {
+        return new BaseTableEnsureSingleUpdateIterator<>(this);
+    }
 }

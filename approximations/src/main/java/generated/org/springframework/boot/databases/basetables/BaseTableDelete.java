@@ -29,7 +29,9 @@ public class BaseTableDelete<V> extends AChainedBaseTable<V> {
 
     @NotNull
     @Override
-    public Iterator<Object[]> iterator() { return new BaseTableDeleteIterator<>(this); }
+    public Iterator<Object[]> iterator() {
+        return new BaseTableDeleteIterator<>(this);
+    }
 
     @Override
     public void deleteAll() {

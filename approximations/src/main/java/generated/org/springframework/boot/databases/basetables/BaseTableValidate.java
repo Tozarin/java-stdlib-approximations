@@ -16,7 +16,9 @@ public class BaseTableValidate<V> extends AChainedBaseTable<V> {
     }
 
     @Override
-    public void deleteAll() { table.deleteAll(); }
+    public void deleteAll() {
+        table.deleteAll();
+    }
 
     @Override
     public int size() {
@@ -27,5 +29,7 @@ public class BaseTableValidate<V> extends AChainedBaseTable<V> {
 
     @NotNull
     @Override
-    public Iterator<Object[]> iterator() { return new BaseTableValidateIterator<>(this); }
+    public Iterator<Object[]> iterator() {
+        return new BaseTableValidateIterator<>(this);
+    }
 }

@@ -37,7 +37,9 @@ public class FlatTable<T> implements ITable<T> {
 
     @NotNull
     @Override
-    public Iterator<T> iterator() { return new FlatIterator<>(this); }
+    public Iterator<T> iterator() {
+        return new FlatIterator<>(this);
+    }
 
     @Override
     public Class<T> type() {

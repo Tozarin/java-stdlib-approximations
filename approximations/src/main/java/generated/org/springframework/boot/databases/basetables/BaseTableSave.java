@@ -23,7 +23,9 @@ public class BaseTableSave<V> extends AChainedBaseTable<V> {
 
     @NotNull
     @Override
-    public Iterator<Object[]> iterator() { return new BaseTableSaveIterator<>(this); }
+    public Iterator<Object[]> iterator() {
+        return new BaseTableSaveIterator<>(this);
+    }
 
     @Override
     public void deleteAll() {

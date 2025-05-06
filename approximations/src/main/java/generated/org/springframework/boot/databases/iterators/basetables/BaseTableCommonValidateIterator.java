@@ -41,7 +41,9 @@ public class BaseTableCommonValidateIterator<V> implements Iterator<Object[]> {
     }
 
     @Override
-    public boolean hasNext() { return tblIter.hasNext(); }
+    public boolean hasNext() {
+        return tblIter.hasNext();
+    }
 
     @Override
     public Object[] next() {

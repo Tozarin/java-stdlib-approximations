@@ -35,8 +35,13 @@ public class RangeUpdatedTableIterator<V> implements Iterator<Object[]> {
         this.isEnded = false;
     }
 
-    public int nextSavedIx() { return currSavedIx++; }
-    public boolean hasNextSaved() { return currSavedIx <= table.currSaveIx; }
+    public int nextSavedIx() {
+        return currSavedIx++;
+    }
+
+    public boolean hasNextSaved() {
+        return currSavedIx <= table.currSaveIx;
+    }
 
     @Override
     @SuppressWarnings("unchecked")
@@ -55,8 +60,7 @@ public class RangeUpdatedTableIterator<V> implements Iterator<Object[]> {
 
                     if (savedRowsStatusCopy.get(id)) {
                         savedRowsStatusCopy.set(id, false);
-                    }
-                    else {
+                    } else {
                         curr = null;
                         return hasNext();
                     }

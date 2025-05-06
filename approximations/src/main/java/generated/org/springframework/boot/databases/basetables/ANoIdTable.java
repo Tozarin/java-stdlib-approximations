@@ -7,11 +7,14 @@ import java.util.Iterator;
 public abstract class ANoIdTable implements ITable<Object[]> {
 
     public abstract int columnCount();
+
     public abstract Class<?>[] columnTypes();
 
     public abstract void deleteAll();
 
-    public Iterable<Object[]> findAll() { return this; }
+    public Iterable<Object[]> findAll() {
+        return this;
+    }
 
     @Override
     public Object[] first() {

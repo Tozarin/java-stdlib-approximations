@@ -48,10 +48,14 @@ public class NoIdTable extends ANoIdTable {
     }
 
     @Override
-    public int columnCount() { return columnCount; }
+    public int columnCount() {
+        return columnCount;
+    }
 
     @Override
-    public Class<?>[] columnTypes() { return columnTypes; }
+    public Class<?>[] columnTypes() {
+        return columnTypes;
+    }
 
     @Override
     @NotNull

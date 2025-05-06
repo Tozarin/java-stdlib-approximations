@@ -44,7 +44,9 @@ public class BaseTableIterator<V> implements Iterator<Object[]> {
     }
 
     @Override
-    public boolean hasNext() { return condition(); }
+    public boolean hasNext() {
+        return condition();
+    }
 
     @Override
     @SuppressWarnings("unchecked")
