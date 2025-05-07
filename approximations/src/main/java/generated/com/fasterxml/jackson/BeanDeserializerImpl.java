@@ -60,15 +60,8 @@ public class BeanDeserializerImpl extends BeanDeserializer {
         return true;
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T> Class<T> wrap(Class<T> c) {
-        return (Class<T>) MethodType.methodType(c).wrap().returnType();
-    }
-
     public static List<Object> getPrimitive(JavaType type) {
-        Class<?> boxed = wrap(type.getRawClass());
-        Object result = Engine.makeSymbolic(boxed);
-        Engine.assume(result != null);
+        Object result = SymbolicValueFactory.createSymbolic(type.getRawClass(), false);
         return Arrays.asList(result, result);
     }
 

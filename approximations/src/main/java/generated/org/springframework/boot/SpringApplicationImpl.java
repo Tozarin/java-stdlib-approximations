@@ -15,14 +15,18 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.setup.DefaultMockMvcBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.servlet.ModelAndView;
 import org.usvm.api.Engine;
 
-import static generated.org.springframework.boot.pinnedValues.PinnedValueSource.RESPONSE_EXCEPTION;
+import static generated.org.springframework.boot.pinnedValues.PinnedValueSource.RESOLVED_EXCEPTION_CLASS;
+import static generated.org.springframework.boot.pinnedValues.PinnedValueSource.RESOLVED_EXCEPTION_MESSAGE;
+import static generated.org.springframework.boot.pinnedValues.PinnedValueSource.UNHANDLED_EXCEPTION_CLASS;
+import static generated.org.springframework.boot.pinnedValues.PinnedValueSource.VIEW_NAME;
 import static generated.org.springframework.boot.pinnedValues.PinnedValueStorage.getPinnedValue;
 import static generated.org.springframework.boot.pinnedValues.PinnedValueStorage.writePinnedValue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -89,6 +93,23 @@ public class SpringApplicationImpl {
         return new User(username, password, authorities);
     }
 
+    private void writeResult(MvcResult result) {
+        _writeResponse(result.getResponse());
+        Throwable resolvedException = result.getResolvedException();
+
+        if (resolvedException != null) {
+            String message = resolvedException.getMessage();
+            if (message != null)
+                writePinnedValue(RESOLVED_EXCEPTION_MESSAGE, message);
+            writePinnedValue(RESOLVED_EXCEPTION_CLASS, resolvedException.getClass());
+        }
+
+        ModelAndView mav = result.getModelAndView();
+        if (mav != null) {
+            writePinnedValue(VIEW_NAME, mav.getViewName());
+        }
+    }
+
     protected void afterRefresh(ConfigurableApplicationContext context, ApplicationArguments args) {
         // TODO: care about conditional beans
         _startAnalysis();
@@ -123,11 +144,11 @@ public class SpringApplicationImpl {
                     _fillSecurityHeaders();
                     request = request.with(user(userDetails));
                 }
-                ResultActions result = mockMvc.perform(request);
-                _writeResponse(result.andReturn().getResponse());
+                MvcResult result = mockMvc.perform(request).andReturn();
+                writeResult(result);
                 _internalLog("[USVM] end of path analysis", path);
             } catch (Throwable e) {
-                writePinnedValue(RESPONSE_EXCEPTION, e);
+                writePinnedValue(UNHANDLED_EXCEPTION_CLASS, e.getClass());
                 _internalLog("[USVM] analysis finished with exception", path);
             } finally {
                 PinnedValueStorage.preparePinnedValues();

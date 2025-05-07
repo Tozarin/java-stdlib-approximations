@@ -63,18 +63,12 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
         return new GenericClass(null, null, true);
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T> Class<T> wrap(Class<T> c) {
-        return (Class<T>) MethodType.methodType(c).wrap().returnType();
-    }
-
     private static Map<String, Object> _getFieldTypes(Class<?> target) {
         throw new IllegalStateException("This method must be approximated");
     }
 
     private Object getInputData(String name, Class<?> clazz) {
-        Class<?> boxed = wrap(clazz);
-        return PinnedValueStorage.getPinnedValue(PinnedValueSource.REQUEST_PARAM, name, boxed);
+        return PinnedValueStorage.getPinnedValue(PinnedValueSource.REQUEST_PARAM, name, clazz);
     }
 
     private static Field findField(Class<?> clazz, String fieldName) {
