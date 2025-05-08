@@ -8,7 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.lang.Nullable;
 import stub.java.util.map.RequestMap;
 
-import static generated.org.springframework.boot.pinnedValues.PinnedValueSource.REQUEST_CONTENT_TYPE;
+import static generated.org.springframework.boot.pinnedValues.PinnedValueSource.REQUEST_MEDIA_TYPE_NAME;
 
 @Approximate(HttpHeaders.class)
 public class HttpHeadersImpl {
@@ -22,7 +22,8 @@ public class HttpHeadersImpl {
     public MediaType getContentType() {
         // TODO: Make symbolic with pre-defined values that will be accepted by respective message converter
         MediaType mediaType = MediaType.APPLICATION_JSON;
-        PinnedValueStorage.writePinnedValue(REQUEST_CONTENT_TYPE, mediaType);
+        MediaTypeName mediaTypeName = MediaTypeName.APPLICATION_JSON;
+        PinnedValueStorage.writePinnedValue(REQUEST_MEDIA_TYPE_NAME, mediaTypeName.name());
         return mediaType;
     }
 }
