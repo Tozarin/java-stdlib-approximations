@@ -20,14 +20,14 @@ import java.util.function.Function;
 // T - type of dataclass, V - type of id field
 public class CrudManager<T, V> {
 
-    public BaseTableManager<V> table;
+    public BaseTableManager<T, V> table;
     public Function<T, Object[]> serializer; // nullable
     public Function<Object[], T> deserializer; // nullable
 
     public Class<T> genericType;
 
     public CrudManager(
-            BaseTableManager<V> table,
+            BaseTableManager<T, V> table,
             Function<T, Object[]> serializer,
             Function<Object[], T> deserializer,
             Class<T> genericType

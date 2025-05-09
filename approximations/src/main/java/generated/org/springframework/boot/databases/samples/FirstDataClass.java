@@ -178,7 +178,7 @@ public class FirstDataClass {
         if (ctx.contains(t)) return;
 
         CrudManager<FirstDataClass, Integer> manager = new CrudManager<>(
-                SpringDatabases._blank,
+                SpringDatabases._blank1,
                 FirstDataClass::_serilizer,
                 FirstDataClass::new,
                 FirstDataClass.class
@@ -192,7 +192,7 @@ public class FirstDataClass {
         // needs to easier code generation
         SaveUpdDelManyManager<SecondDataClass, Integer, Integer> secondDataClassManager = new SaveUpdDelManyManager<>(
                 ctx,
-                SpringDatabases._blank,
+                SpringDatabases._blank2,
                 SecondDataClass::_save,
                 SecondDataClass::_delete,
                 t_id,
@@ -210,14 +210,14 @@ public class FirstDataClass {
         SecondDataClass b1 = t.oneToOne;
         Integer b1_id = secondDataClassManager.getId(b1);
         SecondDataClass._save(b1, ctx);
-        SpringDatabases._blank.changeSingleFieldByIdEnsure(t_id, 2, b1_id);// update null in oneToOne_id
+        SpringDatabases._blank2.changeSingleFieldByIdEnsure(t_id, 2, b1_id);// update null in oneToOne_id
 
         // block 2, can not be updated recursively
         ctx.setAllowRecursiveUpdate(false);
         SecondDataClass b2 = t.manyToOne;
         Integer b2_id = secondDataClassManager.getId(b2);
         SecondDataClass._save(b2, ctx);
-        SpringDatabases._blank.changeSingleFieldByIdEnsure(t_id, 1, b2_id); // update null in manyToOne_id
+        SpringDatabases._blank2.changeSingleFieldByIdEnsure(t_id, 1, b2_id); // update null in manyToOne_id
 
         // block 3
         secondDataClassManager.setAllowRecursiveUpdate(true);
@@ -243,7 +243,7 @@ public class FirstDataClass {
         if (ctx.contains(t)) return;
 
         CrudManager<FirstDataClass, Integer> manager = new CrudManager<>(
-                SpringDatabases._blank,
+                SpringDatabases._blank1,
                 FirstDataClass::_serilizer,
                 FirstDataClass::new,
                 FirstDataClass.class
@@ -257,7 +257,7 @@ public class FirstDataClass {
 
         SaveUpdDelManyManager<SecondDataClass, Integer, Integer> secondDataClassManager = new SaveUpdDelManyManager<>(
                 ctx,
-                SpringDatabases._blank,
+                SpringDatabases._blank2,
                 SecondDataClass::_save,
                 SecondDataClass::_delete,
                 t._getId(),
