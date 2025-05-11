@@ -11,13 +11,11 @@ import org.springframework.core.CollectionFactory;
 import org.springframework.core.ResolvableType;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.PatternMatchUtils;
-import org.springframework.util.ReflectionUtils;
 import org.springframework.web.bind.ServletRequestDataBinder;
 import org.usvm.api.Engine;
 import runtime.LibSLRuntime;
 
 import java.beans.PropertyDescriptor;
-import java.lang.invoke.MethodType;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -63,7 +61,7 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
         return new GenericClass(null, null, true);
     }
 
-    private static Map<String, Object> _getFieldTypes(Class<?> target) {
+    private static Map<Field, Object> _getFieldTypes(Class<?> target) {
         throw new IllegalStateException("This method must be approximated");
     }
 
@@ -71,11 +69,8 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
         return PinnedValueStorage.getPinnedValue(PinnedValueSource.REQUEST_PARAM, name, clazz);
     }
 
-    private static Field findField(Class<?> clazz, String fieldName) {
-        return ReflectionUtils.findField(clazz, fieldName);
-    }
-
     private static void writeField(Object target, Field field, Object value) {
+        // TODO: approximate
         field.setAccessible(true);
         try {
             field.set(target, value);
@@ -89,6 +84,7 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
     }
 
     private static Object readField(Object target, Field field) {
+        // TODO: approximate
         field.setAccessible(true);
         try {
             return field.get(target);
@@ -355,14 +351,13 @@ public class ServletRequestDataBinderImpl extends ServletRequestDataBinder {
 
         else {
             Class<?> clazz = genericClass.getInternalClass();
-            Map<String, Object> fieldData = _getFieldTypes(clazz);
-
-            for (Map.Entry<String, Object> fData : fieldData.entrySet()) {
-                String fieldName = fData.getKey();
+            Map<Field, Object> fieldData = _getFieldTypes(clazz);
+            for (Map.Entry<Field, Object> fData : fieldData.entrySet()) {
+                Field field = fData.getKey();
+                String fieldName = field.getName();
                 Object fieldClass = fData.getValue();
                 String pathWithField = path.isEmpty() ? fieldName : path + FIELD_SEPARATOR + fieldName;
                 GenericClass fieldType = new GenericClass(fieldClass);
-                Field field = findField(clazz, fieldName);
 
                 if (!canWriteField(fieldName, fieldType))
                     continue;
