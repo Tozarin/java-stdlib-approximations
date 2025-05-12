@@ -2,6 +2,7 @@ package stub.java.util.map;
 
 
 import generated.org.springframework.boot.pinnedValues.PinnedValueSource;
+import generated.org.springframework.boot.pinnedValues.PinnedValueStorage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -10,12 +11,6 @@ import java.util.Map;
 import java.util.Set;
 
 public class RequestMap implements Map<String, String> {
-    public PinnedValueSource sourcePrefix;
-
-    public RequestMap(PinnedValueSource sourcePrefix) {
-        this.sourcePrefix = sourcePrefix;
-    }
-
     public int size() { throw new LinkageError(); }
 
     public boolean isEmpty() { throw new LinkageError(); }
@@ -25,8 +20,6 @@ public class RequestMap implements Map<String, String> {
     public boolean containsValue(Object value) { throw new LinkageError(); }
 
     public String get(Object key) { throw new LinkageError(); }
-
-    public String set(String key, Object value) { throw new LinkageError(); }
 
     @Nullable
     public String put(String key, String value) { throw new LinkageError(); }

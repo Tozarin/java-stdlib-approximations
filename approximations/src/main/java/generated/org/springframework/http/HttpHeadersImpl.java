@@ -8,14 +8,13 @@ import org.springframework.http.MediaType;
 import org.springframework.lang.Nullable;
 import stub.java.util.map.RequestMap;
 
+import static generated.org.springframework.boot.pinnedValues.PinnedValueSource.REQUEST_HEADER;
 import static generated.org.springframework.boot.pinnedValues.PinnedValueSource.REQUEST_MEDIA_TYPE_NAME;
 
 @Approximate(HttpHeaders.class)
 public class HttpHeadersImpl {
-    private final RequestMap fakeHeaders = new RequestMap(PinnedValueSource.REQUEST_HEADER);
-
     public void set(String headerName, @Nullable String headerValue) {
-        fakeHeaders.set(headerName, headerValue);
+        PinnedValueStorage.writePinnedValue(REQUEST_HEADER, headerName, headerValue);
     }
 
     @Nullable

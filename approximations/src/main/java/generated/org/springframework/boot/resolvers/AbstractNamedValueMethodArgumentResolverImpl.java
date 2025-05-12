@@ -4,7 +4,6 @@ import generated.org.springframework.boot.SpringApplicationImpl;
 import generated.org.springframework.boot.SymbolicValueFactory;
 import generated.org.springframework.boot.pinnedValues.PinnedValueSource;
 import generated.org.springframework.boot.pinnedValues.PinnedValueStorage;
-import org.assertj.core.util.Arrays;
 import org.jacodb.approximation.annotation.Approximate;
 import org.springframework.core.MethodParameter;
 import org.springframework.lang.Nullable;
@@ -35,7 +34,7 @@ public abstract class AbstractNamedValueMethodArgumentResolverImpl extends Abstr
         return value;
     }
 
-    private static List<Object> getPinnedKeyOfParameter(MethodParameter parameter) {
+    private static List<Object> getPinnedKeyOfParameterInner(MethodParameter parameter) {
         Annotation[] annotations = parameter.getParameterAnnotations();
         // TODO: Other annotations #AA
         PathVariable pathAnnotation = parameter.getParameterAnnotation(PathVariable.class);
@@ -64,6 +63,16 @@ public abstract class AbstractNamedValueMethodArgumentResolverImpl extends Abstr
         }
         Engine.assume(false);
         throw new IllegalArgumentException();
+    }
+
+    private static List<Object> getPinnedKeyOfParameter(MethodParameter parameter) {
+        List<Object> key = getPinnedKeyOfParameterInner(parameter);
+        String name = (String)key.get(0);
+        if (name == null || name.isEmpty()) {
+            String parameterName = parameter.getParameter().getName();
+            return List.of(parameterName, key.get(1), key.get(2));
+        }
+        return key;
     }
 
     @Nullable

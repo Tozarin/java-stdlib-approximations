@@ -1,6 +1,8 @@
 package generated.org.springframework.boot.resolvers;
 
 import generated.org.springframework.boot.pinnedValues.PinnedValueSource;
+import generated.org.springframework.boot.pinnedValues.RequestMapImpl;
+import generated.org.springframework.boot.pinnedValues.RequestMultiValueMapImpl;
 import org.jacodb.approximation.annotation.Approximate;
 import org.springframework.core.MethodParameter;
 import org.springframework.lang.Nullable;
@@ -18,9 +20,9 @@ public class RequestParamMapMethodArgumentResolverImpl {
                                   NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception {
 
         if (MultiValueMap.class.isAssignableFrom(parameter.getParameterType())) {
-            return new RequestMultiValueMap(PinnedValueSource.REQUEST_PARAM);
+            return new RequestMultiValueMapImpl(PinnedValueSource.REQUEST_PARAM);
         }
 
-        return new RequestMap(PinnedValueSource.REQUEST_PARAM);
+        return new RequestMapImpl(PinnedValueSource.REQUEST_PARAM);
     }
 }

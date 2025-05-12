@@ -9,12 +9,6 @@ import java.util.Map;
 import java.util.Set;
 
 public class RequestMultiValueMap implements Map<String, String[]> {
-    public PinnedValueSource sourcePrefix;
-    
-    public RequestMultiValueMap(PinnedValueSource sourcePrefix) {
-        this.sourcePrefix = sourcePrefix;
-    }
-
     public int size() { throw new LinkageError(); }
 
     public boolean isEmpty() { throw new LinkageError(); }

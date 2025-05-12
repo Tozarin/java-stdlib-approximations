@@ -1,6 +1,8 @@
 package generated.org.springframework.boot.resolvers;
 
 import generated.org.springframework.boot.pinnedValues.PinnedValueSource;
+import generated.org.springframework.boot.pinnedValues.RequestMapImpl;
+import generated.org.springframework.boot.pinnedValues.RequestMultiValueMapImpl;
 import org.jacodb.approximation.annotation.Approximate;
 import org.springframework.core.MethodParameter;
 import org.springframework.lang.Nullable;
@@ -20,8 +22,8 @@ public class RequestHeaderMapMethodArgumentResolverImpl {
         Class<?> paramType = parameter.getParameterType();
 
         if (MultiValueMap.class.isAssignableFrom(paramType))
-            return new RequestMultiValueMap(PinnedValueSource.REQUEST_HEADER);
+            return new RequestMultiValueMapImpl(PinnedValueSource.REQUEST_HEADER);
 
-        return new RequestMap(PinnedValueSource.REQUEST_HEADER);
+        return new RequestMapImpl(PinnedValueSource.REQUEST_HEADER);
     }
 }

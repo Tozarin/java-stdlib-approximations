@@ -1,6 +1,8 @@
 package generated.org.springframework.boot.resolvers;
 
 import generated.org.springframework.boot.pinnedValues.PinnedValueSource;
+import generated.org.springframework.boot.pinnedValues.RequestMapImpl;
+import generated.org.springframework.boot.pinnedValues.RequestMultiValueMapImpl;
 import org.jacodb.approximation.annotation.Approximate;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
@@ -21,9 +23,9 @@ public class MatrixVariableMapMethodArgumentResolverImpl {
     public Object resolveArgument(MethodParameter parameter, @Nullable ModelAndViewContainer mavContainer,
                                   NativeWebRequest request, @Nullable WebDataBinderFactory binderFactory) throws Exception {
         if (isSingleValueMap(parameter))
-            return new RequestMap(PinnedValueSource.REQUEST_MATRIX);
+            return new RequestMapImpl(PinnedValueSource.REQUEST_MATRIX);
 
-        return new RequestMultiValueMap(PinnedValueSource.REQUEST_MATRIX);
+        return new RequestMultiValueMapImpl(PinnedValueSource.REQUEST_MATRIX);
     }
 
     private boolean isSingleValueMap(MethodParameter parameter) {

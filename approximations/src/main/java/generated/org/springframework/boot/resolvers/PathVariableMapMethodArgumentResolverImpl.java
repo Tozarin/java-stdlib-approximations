@@ -1,6 +1,7 @@
 package generated.org.springframework.boot.resolvers;
 
 import generated.org.springframework.boot.pinnedValues.PinnedValueSource;
+import generated.org.springframework.boot.pinnedValues.RequestMapImpl;
 import org.jacodb.approximation.annotation.Approximate;
 import org.springframework.core.MethodParameter;
 import org.springframework.lang.Nullable;
@@ -14,6 +15,6 @@ import stub.java.util.map.RequestMap;
 public class PathVariableMapMethodArgumentResolverImpl {
     public Object resolveArgument(MethodParameter parameter, @Nullable ModelAndViewContainer mavContainer,
                                   NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception {
-        return new RequestMap(PinnedValueSource.REQUEST_PATH_VARIABLE);
+        return new RequestMapImpl(PinnedValueSource.REQUEST_PATH_VARIABLE);
     }
 }
