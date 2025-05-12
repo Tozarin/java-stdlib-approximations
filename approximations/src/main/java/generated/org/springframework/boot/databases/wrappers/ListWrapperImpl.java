@@ -3,6 +3,7 @@ package generated.org.springframework.boot.databases.wrappers;
 import generated.org.springframework.boot.databases.ITable;
 import generated.org.springframework.boot.databases.iterators.wrappers.ListWrapperIterator;
 import generated.org.springframework.boot.databases.iterators.wrappers.ListWrapperListIterator;
+import org.jacodb.approximation.annotation.Approximate;
 import org.jetbrains.annotations.NotNull;
 import org.usvm.api.Engine;
 import org.usvm.api.SymbolicList;
@@ -14,7 +15,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
-public class ListWrapper<T> implements List<T>, IWrapper<T> {
+@Approximate(stub.spring.ListWrapper.class)
+public class ListWrapperImpl<T> implements IListWrapper<T> {
 
     public ITable<T> table;
     public Iterator<T> tblIter;
@@ -29,7 +31,7 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
     public int modCount;
     private boolean initialized = false;
 
-    public ListWrapper(ITable<T> table) {
+    public ListWrapperImpl(ITable<T> table) {
         this.table = table;
     }
 
@@ -62,6 +64,32 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     // region Cache
 
+    @Override
+    public int getSizeOfCache() {
+        return sizeOfCache;
+    }
+
+    @Override
+    public int getModCount() {
+        return modCount;
+    }
+
+    @Override
+    public int getWrpStartIx() {
+        return wrpStartIx;
+    }
+
+    @Override
+    public int getWrpEndIx() {
+        return wrpEndIx;
+    }
+
+    @Override
+    public T getFromCache(int ix) {
+        return cache.get(ix);
+    }
+
+    @Override
     public T cacheNext() {
         if (wrpStartIx == wrpEndIx) return null;
 
@@ -74,8 +102,8 @@ public class ListWrapper<T> implements List<T>, IWrapper<T> {
         return next;
     }
 
+    @Override
     public void cacheUntilIx(int ix) {
-
         while (wrpStartIx <= ix && wrpStartIx < wrpEndIx) {
             cacheNext();
         }

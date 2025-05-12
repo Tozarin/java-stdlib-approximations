@@ -15,7 +15,7 @@ public class SaveUpdDelManyManager<T, V1, V2> {
 
     public SaveUpdDelCtx context;
 
-    public BaseTableManager<V2> manager;
+    public BaseTableManager<T, V2> manager;
 
     public BiConsumer<T, SaveUpdDelCtx> saveUpd; // nullable
     public BiConsumer<T, SaveUpdDelCtx> delete; // nullable
@@ -29,7 +29,7 @@ public class SaveUpdDelManyManager<T, V1, V2> {
 
     public SaveUpdDelManyManager(
             SaveUpdDelCtx context,
-            BaseTableManager<V2> manager,
+            BaseTableManager<T, V2> manager,
             BiConsumer<T, SaveUpdDelCtx> saveUpd, // nullable
             BiConsumer<T, SaveUpdDelCtx> delete, // nullable
 

@@ -3,12 +3,12 @@ package generated.org.springframework.boot.databases.saveupddel;
 import generated.org.springframework.boot.databases.MappedTable;
 import generated.org.springframework.boot.databases.basetables.BaseTableManager;
 import generated.org.springframework.boot.databases.iterators.utils.IteratorWithMap;
-import generated.org.springframework.boot.databases.wrappers.ListWrapper;
 import generated.org.springframework.boot.databases.wrappers.SetWrapper;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import stub.spring.ListWrapper;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -20,14 +20,14 @@ import java.util.function.Function;
 // T - type of dataclass, V - type of id field
 public class CrudManager<T, V> {
 
-    public BaseTableManager<V> table;
+    public BaseTableManager<T, V> table;
     public Function<T, Object[]> serializer; // nullable
     public Function<Object[], T> deserializer; // nullable
 
     public Class<T> genericType;
 
     public CrudManager(
-            BaseTableManager<V> table,
+            BaseTableManager<T, V> table,
             Function<T, Object[]> serializer,
             Function<Object[], T> deserializer,
             Class<T> genericType

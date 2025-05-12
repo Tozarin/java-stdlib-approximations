@@ -1,24 +1,33 @@
 package generated.org.springframework.boot.databases.basetables;
 
+import generated.org.springframework.boot.databases.MappedTable;
 import jakarta.validation.ConstraintValidator;
 import org.jetbrains.annotations.NotNull;
 import org.usvm.api.Engine;
+import stub.spring.ListWrapper;
 
 import java.util.Iterator;
 import java.util.function.Function;
 
-public class BaseTableManager<V> extends ABaseTable<V> implements ITableManager {
+public class BaseTableManager<T, V> extends ABaseTable<V> implements ITableManager {
 
+    public BaseTable<V> base;
     public ABaseTable<V> tablesChain;
+
+    public Class<T> entityType;
 
     public BaseTableManager(
             int idIndex,
+            Class<T> entityType,
             Class<?>[] columnTypes,
             ConstraintValidator<?, ?>[][] validators
     ) {
         BaseTable<V> base = new BaseTable<>(idIndex, columnTypes);
 
+        this.base = base;
         this.tablesChain = new BaseTableConstraintValidate<>(base, validators);
+
+        this.entityType = entityType;
     }
 
     @Override
@@ -92,5 +101,10 @@ public class BaseTableManager<V> extends ABaseTable<V> implements ITableManager 
     @Override
     public void deleteAll() {
         tablesChain.deleteAll();
+    }
+
+    public ListWrapper<T> getAllEntities(Function<Object[], T> deserializer) {
+        MappedTable<Object[], T> entities = new MappedTable<>(base, deserializer, entityType);
+        return new ListWrapper<>(entities);
     }
 }

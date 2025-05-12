@@ -1,12 +1,12 @@
 package decoders.org.springframework.boot.databases.wrappers;
 
-import generated.org.springframework.boot.databases.wrappers.ListWrapper;
 import org.jacodb.api.jvm.*;
 import org.usvm.api.SymbolicList;
 import org.usvm.api.decoder.DecoderApi;
 import org.usvm.api.decoder.DecoderFor;
 import org.usvm.api.decoder.ObjectData;
 import org.usvm.api.decoder.ObjectDecoder;
+import stub.spring.ListWrapper;
 
 import java.util.ArrayList;
 import java.util.Collections;

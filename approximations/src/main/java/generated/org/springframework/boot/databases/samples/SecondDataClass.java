@@ -3,7 +3,7 @@ package generated.org.springframework.boot.databases.samples;
 import generated.org.springframework.boot.databases.FiltredTable;
 import generated.org.springframework.boot.databases.ITable;
 import generated.org.springframework.boot.databases.saveupddel.SaveUpdDelCtx;
-import generated.org.springframework.boot.databases.wrappers.ListWrapper;
+import stub.spring.ListWrapper;
 
 import java.util.List;
 
