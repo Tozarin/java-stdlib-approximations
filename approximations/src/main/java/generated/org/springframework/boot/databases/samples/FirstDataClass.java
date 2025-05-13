@@ -6,8 +6,8 @@ import generated.org.springframework.boot.databases.MappedTable;
 import generated.org.springframework.boot.databases.saveupddel.CrudManager;
 import generated.org.springframework.boot.databases.saveupddel.SaveUpdDelCtx;
 import generated.org.springframework.boot.databases.saveupddel.SaveUpdDelManyManager;
+import generated.org.springframework.boot.databases.wrappers.ListWrapper;
 import generated.org.springframework.boot.databases.wrappers.SetWrapper;
-import stub.spring.ListWrapper;
 
 import java.util.List;
 import java.util.Set;

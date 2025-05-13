@@ -1,10 +1,10 @@
 package generated.org.springframework.boot.databases.basetables;
 
 import generated.org.springframework.boot.databases.MappedTable;
+import generated.org.springframework.boot.databases.wrappers.ListWrapper;
 import jakarta.validation.ConstraintValidator;
 import org.jetbrains.annotations.NotNull;
 import org.usvm.api.Engine;
-import stub.spring.ListWrapper;
 
 import java.util.Iterator;
 import java.util.function.Function;

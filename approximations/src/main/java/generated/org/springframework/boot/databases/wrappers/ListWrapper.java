@@ -3,7 +3,6 @@ package generated.org.springframework.boot.databases.wrappers;
 import generated.org.springframework.boot.databases.ITable;
 import generated.org.springframework.boot.databases.iterators.wrappers.ListWrapperIterator;
 import generated.org.springframework.boot.databases.iterators.wrappers.ListWrapperListIterator;
-import org.jacodb.approximation.annotation.Approximate;
 import org.jetbrains.annotations.NotNull;
 import org.usvm.api.Engine;
 import org.usvm.api.SymbolicList;
@@ -15,8 +14,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
-@Approximate(stub.spring.ListWrapper.class)
-public class ListWrapperImpl<T> implements IListWrapper<T> {
+public class ListWrapper<T> implements List<T>, IWrapper<T> {
 
     public ITable<T> table;
     public Iterator<T> tblIter;
@@ -31,7 +29,7 @@ public class ListWrapperImpl<T> implements IListWrapper<T> {
     public int modCount;
     private boolean initialized = false;
 
-    public ListWrapperImpl(ITable<T> table) {
+    public ListWrapper(ITable<T> table) {
         this.table = table;
     }
 
@@ -48,14 +46,14 @@ public class ListWrapperImpl<T> implements IListWrapper<T> {
 
         int tblSize = table.size();
         this.tblIter = table.iterator();
-        this.tblStartIx = 0;
+        this.tblStartIx = -1;
         this.type = table.type();
 
         this.cache = Engine.makeFullySymbolicList();
         Engine.assume(cache != null);
         Engine.assume(cache.size() == tblSize);
         this.sizeOfCache = tblSize;
-        this.wrpStartIx = 0;
+        this.wrpStartIx = -1;
         this.wrpEndIx = tblSize;
 
         this.modCount = 0;
@@ -64,48 +62,25 @@ public class ListWrapperImpl<T> implements IListWrapper<T> {
 
     // region Cache
 
-    @Override
-    public int getSizeOfCache() {
-        return sizeOfCache;
-    }
-
-    @Override
-    public int getModCount() {
-        return modCount;
-    }
-
-    @Override
-    public int getWrpStartIx() {
-        return wrpStartIx;
-    }
-
-    @Override
-    public int getWrpEndIx() {
-        return wrpEndIx;
-    }
-
-    @Override
-    public T getFromCache(int ix) {
-        return cache.get(ix);
-    }
-
-    @Override
     public T cacheNext() {
-        if (wrpStartIx == wrpEndIx) return null;
+        // table doesnt contain next element
+        if (wrpStartIx + 1 == wrpEndIx) return null;
+
+        wrpStartIx++; // for example, -1 -> 0 (cache element at index 0)
+        tblStartIx++;
 
         T next = tblIter.next();
         cache.set(wrpStartIx, next);
 
-        wrpStartIx++;
-        tblStartIx++;
-
         return next;
     }
 
-    @Override
     public void cacheUntilIx(int ix) {
-        while (wrpStartIx <= ix && wrpStartIx < wrpEndIx) {
-            cacheNext();
+        // to cache element at index 2 we need to stop when wrpStartIx == 2 (this element cached)
+        while (wrpStartIx < ix) {
+
+            // == null mean that we cached all elements
+            if (cacheNext() == null) return;
         }
     }
 
@@ -117,9 +92,9 @@ public class ListWrapperImpl<T> implements IListWrapper<T> {
 
     // region Find
 
+    // find in cache
     private int findLeft(T t) {
-
-        for (int i = 0; i < wrpStartIx; i++) {
+        for (int i = 0; i <= wrpStartIx; i++) {
             T cached = cache.get(i);
             if (cached.equals(t)) return i;
         }
@@ -127,17 +102,22 @@ public class ListWrapperImpl<T> implements IListWrapper<T> {
         return -1;
     }
 
+    // find in uncached part
     private int findMiddle(T t) {
+        // cache next element
         T next = cacheNext();
+
+        // all elements are cached
         if (next == null) return -1;
 
+        // next is element at index wrpStartIx
         if (next.equals(t)) return wrpStartIx;
 
         return findMiddle(t);
     }
 
+    // find in added part
     private int findRight(T t) {
-
         for (int i = wrpEndIx; i < sizeOfCache; i++) {
             T cached = cache.get(i);
             if (cached.equals(t)) return i;
@@ -150,12 +130,13 @@ public class ListWrapperImpl<T> implements IListWrapper<T> {
 
     // region Remove
 
+    // remove from cached part
     private boolean removeLeft(T t) {
-
         int ix = findLeft(t);
         if (ix != -1) {
             cache.remove(ix);
 
+            // we need to move window of uncached elements in wrapper to left
             wrpStartIx--;
             wrpEndIx--;
 
@@ -168,13 +149,15 @@ public class ListWrapperImpl<T> implements IListWrapper<T> {
         return false;
     }
 
+    // remove from uncached part
     private boolean removeMiddle(T t) {
-
+        // here we cached to ix index (wrpStartIx == ix)
         int ix = findMiddle(t);
-
         if (ix != -1) {
             cache.remove(ix);
 
+            // here we removed from cached part
+            wrpStartIx--;
             wrpEndIx--;
 
             sizeOfCache--;
@@ -186,11 +169,13 @@ public class ListWrapperImpl<T> implements IListWrapper<T> {
         return false;
     }
 
+    // remove from added elements
     private boolean removeRight(T t) {
-
         int ix = findRight(t);
         if (ix != -1) {
             cache.remove(ix);
+
+            // position of window of uncached elements has not changed
 
             sizeOfCache--;
             modCount++;
@@ -212,6 +197,7 @@ public class ListWrapperImpl<T> implements IListWrapper<T> {
     public int size() {
         ensureInitialized();
 
+        // we need to force eval of all elements so size is correct
         int count = 0;
         Iterator<T> iter = iterator();
         while (iter.hasNext()) {
@@ -259,7 +245,11 @@ public class ListWrapperImpl<T> implements IListWrapper<T> {
         Object[] arr = new Object[sizeOfCache];
 
         int ix = 0;
-        for (T t : this) arr[ix++] = t;
+        Iterator<T> iter = iterator();
+        while (iter.hasNext()) {
+            T t = iter.next();
+            arr[ix++] = t;
+        }
 
         return arr;
     }
@@ -272,8 +262,6 @@ public class ListWrapperImpl<T> implements IListWrapper<T> {
 
         Class<?> genericType = a.getClass().componentType();
 
-        //if (!genericType.isAssignableFrom(type)) throw new ArrayStoreException();
-
         T1[] array = a.length < sizeOfCache ?
                 (T1[]) Array.newInstance(genericType, sizeOfCache)
                 : a;
@@ -282,6 +270,7 @@ public class ListWrapperImpl<T> implements IListWrapper<T> {
         int ix = 0;
         while (iter.hasNext()) array[ix++] = (T1) iter.next();
 
+        // corresponds semantics of toArray
         while (ix < a.length) array[ix++] = null;
 
         return array;
@@ -291,6 +280,8 @@ public class ListWrapperImpl<T> implements IListWrapper<T> {
     public boolean add(T t) {
         ensureInitialized();
 
+        // add to added part
+        // t is last element now
         cache.insert(sizeOfCache, t);
         sizeOfCache++;
         modCount++;
@@ -333,8 +324,7 @@ public class ListWrapperImpl<T> implements IListWrapper<T> {
 
         Iterator<? extends T> iter = c.iterator();
         while (iter.hasNext()) {
-            T t = iter.next();
-            cache.insert(sizeOfCache++, t);
+            add(iter.next());
         }
         modCount++;
 
@@ -345,11 +335,13 @@ public class ListWrapperImpl<T> implements IListWrapper<T> {
     public boolean addAll(int index, @NotNull Collection<? extends T> c) {
         ensureInitialized();
 
+        // throws errors
         checkIndex(index);
 
         int sizeOfCol = c.size();
         if (sizeOfCol == 0) return false;
 
+        // cache until index-1, index is uncached (if index has not been cached)
         cacheUntilIx(index - 1);
         Iterator<? extends T> iter = c.iterator();
         while (iter.hasNext()) {
@@ -357,6 +349,13 @@ public class ListWrapperImpl<T> implements IListWrapper<T> {
             cache.insert(index++, t);
         }
 
+        // |0|1|...|index|index+1| ...  ->  |0|1|...|index|index+1| ... |index+sizeOfCol|  ...
+        // |*|*|...|  *i |  *j   | ...      |*|*|...|  c0 |   c1  | ... |      *i       |  *j   | ...
+
+        // |0|1|...|index-1|index| ...  ->  |0|1|...|index-1|index| ... |wrpStIndex|  ...
+        // |*|*|...|   0   |  0  | ...      |*|*|...|   *   |  c0 | ... |  c_last  |  0  | ...
+
+        // move window
         wrpStartIx += sizeOfCol;
         wrpEndIx += sizeOfCol;
 
@@ -393,21 +392,20 @@ public class ListWrapperImpl<T> implements IListWrapper<T> {
         Engine.assume(newCache != null);
         Engine.assume(newCache.size() == 0);
 
-        cacheUntilIx(wrpEndIx);
         Iterator<T> iter = iterator();
         while (iter.hasNext()) {
             T t = iter.next();
             if (c.contains(t)) newCache.insert(newSize++, t);
         }
 
+        // list does not change
         if (newSize == sizeOfCache) return false;
 
         cache = newCache;
         sizeOfCache = newSize;
 
-        wrpStartIx = -1;
-        wrpEndIx = -1;
-        tblStartIx = -1;
+        wrpStartIx = newSize - 1; // mean cached all
+        wrpEndIx = newSize; // mean cached all
         modCount++;
 
         return true;
@@ -415,14 +413,13 @@ public class ListWrapperImpl<T> implements IListWrapper<T> {
 
     @Override
     public void clear() {
-
         cache = Engine.makeSymbolicList();
         Engine.assume(cache != null);
         Engine.assume(cache.size() == 0);
         sizeOfCache = 0;
 
         wrpStartIx = -1;
-        wrpEndIx = -1;
+        wrpEndIx = 0;
         tblStartIx = -1;
         modCount++;
     }
@@ -433,10 +430,13 @@ public class ListWrapperImpl<T> implements IListWrapper<T> {
 
         checkIndex(index);
 
-        if (index < wrpStartIx || wrpEndIx <= index) return cache.get(index);
+        // not in uncached part
+        if (index <= wrpStartIx || wrpEndIx <= index) return cache.get(index);
 
+        // cache to index
         cacheUntilIx(index);
 
+        // wrpStIndex == index
         return cache.get(index);
     }
 
@@ -446,8 +446,8 @@ public class ListWrapperImpl<T> implements IListWrapper<T> {
 
         checkIndex(index);
 
-        T prev = get(index);
-        cache.set(index, element);
+        T prev = get(index); // cached to index
+        cache.set(index, element); // not rewrite uncached yet values because index is cached
         modCount++;
 
         return prev;
@@ -459,10 +459,13 @@ public class ListWrapperImpl<T> implements IListWrapper<T> {
 
         checkIndex(index);
 
-        if (index < wrpStartIx) {
+        if (index <= wrpStartIx) {
+            // updates cached part, need to move window
             wrpStartIx++;
             wrpEndIx++;
         } else if (index < wrpEndIx) {
+            // to modify need cache elements to index because we can override values later
+            // need to move window
             cacheUntilIx(index);
             wrpStartIx++;
             wrpEndIx++;
@@ -479,7 +482,8 @@ public class ListWrapperImpl<T> implements IListWrapper<T> {
 
         checkIndex(index);
 
-        if (index < wrpStartIx) {
+        // as add
+        if (index <= wrpStartIx) {
             wrpStartIx--;
             wrpEndIx--;
         } else if (index < wrpEndIx) {
@@ -523,9 +527,10 @@ public class ListWrapperImpl<T> implements IListWrapper<T> {
 
         T t = type.cast(o);
 
+        // cache all
         cacheUntilIx(wrpEndIx);
 
-        for (int i = sizeOfCache - 1; i > -1; i--) {
+        for (int i = sizeOfCache - 1; i >= 0; i--) {
             if (cache.get(i).equals(t)) return i;
         }
 

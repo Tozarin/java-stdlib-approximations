@@ -3,12 +3,12 @@ package generated.org.springframework.boot.databases.saveupddel;
 import generated.org.springframework.boot.databases.MappedTable;
 import generated.org.springframework.boot.databases.basetables.BaseTableManager;
 import generated.org.springframework.boot.databases.iterators.utils.IteratorWithMap;
+import generated.org.springframework.boot.databases.wrappers.ListWrapper;
 import generated.org.springframework.boot.databases.wrappers.SetWrapper;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import stub.spring.ListWrapper;
 
 import java.util.Collection;
 import java.util.Iterator;

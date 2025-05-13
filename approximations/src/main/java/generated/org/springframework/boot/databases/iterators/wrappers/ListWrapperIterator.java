@@ -1,6 +1,6 @@
 package generated.org.springframework.boot.databases.iterators.wrappers;
 
-import generated.org.springframework.boot.databases.wrappers.IListWrapper;
+import generated.org.springframework.boot.databases.wrappers.ListWrapper;
 
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
@@ -8,18 +8,18 @@ import java.util.NoSuchElementException;
 
 public class ListWrapperIterator<T> implements Iterator<T> {
 
-    IListWrapper<T> list;
+    ListWrapper<T> list;
 
     public int ix;
     public int count;
 
     public int expectedModCount;
 
-    public ListWrapperIterator(IListWrapper<T> list) {
+    public ListWrapperIterator(ListWrapper<T> list) {
         this.list = list;
         this.ix = 0;
-        this.count = list.getSizeOfCache();
-        this.expectedModCount = list.getModCount();
+        this.count = list.sizeOfCache;
+        this.expectedModCount = list.modCount;
     }
 
     @Override
@@ -30,13 +30,15 @@ public class ListWrapperIterator<T> implements Iterator<T> {
     @Override
     public T next() {
         if (!hasNext()) throw new NoSuchElementException();
-        if (expectedModCount != list.getModCount()) throw new ConcurrentModificationException();
+        if (expectedModCount != list.modCount) throw new ConcurrentModificationException();
 
-        if (ix < list.getWrpStartIx() || list.getWrpEndIx() <= ix) return list.getFromCache(ix++);
+        // we are in cached or added part of wrapper
+        if (ix <= list.wrpStartIx || list.wrpEndIx <= ix) list.cache.get(ix++);
 
-        assert (ix == list.getWrpStartIx());
+        // we need to cache next element
+        // here ix == list.wrpStartIx + 1
         list.cacheNext();
 
-        return list.getFromCache(ix++);
+        return list.cache.get(ix++);
     }
 }

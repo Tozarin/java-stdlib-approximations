@@ -13,8 +13,6 @@ public class BaseTableIterator<V> implements Iterator<Object[]> {
     int ix;
     int endIx;
 
-    Object[] curr;
-
     ArrayList<V> returnedIds;
 
     @SuppressWarnings("unchecked")
@@ -23,8 +21,6 @@ public class BaseTableIterator<V> implements Iterator<Object[]> {
 
         this.ix = 0;
         this.endIx = table.size();
-
-        this.curr = null;
 
         this.returnedIds = new ArrayList<>();
     }

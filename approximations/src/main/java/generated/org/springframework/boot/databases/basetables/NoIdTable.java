@@ -12,7 +12,7 @@ public class NoIdTable extends ANoIdTable {
 
     // values always null
     // this is just set
-    public SymbolicMap<Object[], Object> data;
+    public Object[][] data;
     public int size;
 
     public Class<?>[] columnTypes;
@@ -26,12 +26,14 @@ public class NoIdTable extends ANoIdTable {
         this.size = Engine.makeSymbolicInt();
         Engine.assume(size > -1);
 
-        this.data = Engine.makeFullySymbolicMap();
-        Engine.assume(data.size() == size);
+        this.data = new Object[columnCount][];
+        for (int i = 0; i < columnCount; i++) {
+            data[i] = Engine.makeSymbolicArray(columnTypes[i], size);
+        }
     }
 
     public NoIdTable(
-            SymbolicMap<Object[], Object> data,
+            Object[][] data,
             int size,
             Class<?>[] columnTypes,
             int columnCount
@@ -68,6 +70,14 @@ public class NoIdTable extends ANoIdTable {
         return Object[].class;
     }
 
+    public Object[] collectRow(int ix) {
+        Object[] row = new Object[columnCount];
+        for (int i = 0; i < columnCount; i++) {
+            row[i] = data[i][ix];
+        }
+        return row;
+    }
+
     public void ensureRow(Object[] row) {
         Engine.assume(row != null);
         Engine.assume(row.length == columnCount);
@@ -81,7 +91,7 @@ public class NoIdTable extends ANoIdTable {
     @Override
     public Object[] first() {
         if (size != 0) {
-            Object[] row = data.anyKey();
+            Object[] row = collectRow(0);
             ensureRow(row);
             return row;
         }
@@ -92,6 +102,9 @@ public class NoIdTable extends ANoIdTable {
     @Override
     public void deleteAll() {
         size = 0;
-        data = Engine.makeSymbolicMap();
+        data = new Object[columnCount][];
+        for (int i = 0; i < columnCount; i++) {
+            data[i] = Engine.makeSymbolicArray(columnTypes[i], 0);
+        }
     }
 }
