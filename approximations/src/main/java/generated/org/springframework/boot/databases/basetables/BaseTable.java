@@ -27,7 +27,8 @@ public class BaseTable<V> extends ABaseTable<V> {
         this.columnCount = columnTypes.length;
         this.idIndex = idIndex;
         this.size = Engine.makeSymbolicInt();
-        Engine.assume(size > -1);
+        Engine.assume(size >= 0);
+        Engine.assume(size <= 10);
 
         this.data = new Object[columnCount][];
 
