@@ -15,6 +15,6 @@ import stub.java.util.map.RequestMap;
 public class PathVariableMapMethodArgumentResolverImpl {
     public Object resolveArgument(MethodParameter parameter, @Nullable ModelAndViewContainer mavContainer,
                                   NativeWebRequest webRequest, @Nullable WebDataBinderFactory binderFactory) throws Exception {
-        return new RequestMapImpl(PinnedValueSource.REQUEST_PATH_VARIABLE);
+        return new RequestMapImpl(PinnedValueSource.REQUEST_PATH_VARIABLE, false);
     }
 }

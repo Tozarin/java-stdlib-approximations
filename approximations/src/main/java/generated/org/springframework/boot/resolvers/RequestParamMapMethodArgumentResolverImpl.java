@@ -23,6 +23,6 @@ public class RequestParamMapMethodArgumentResolverImpl {
             return new RequestMultiValueMapImpl(PinnedValueSource.REQUEST_PARAM);
         }
 
-        return new RequestMapImpl(PinnedValueSource.REQUEST_PARAM);
+        return new RequestMapImpl(PinnedValueSource.REQUEST_PARAM, false);
     }
 }

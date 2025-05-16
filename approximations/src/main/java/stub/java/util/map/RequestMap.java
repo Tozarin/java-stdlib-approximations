@@ -1,8 +1,6 @@
 package stub.java.util.map;
 
 
-import generated.org.springframework.boot.pinnedValues.PinnedValueSource;
-import generated.org.springframework.boot.pinnedValues.PinnedValueStorage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

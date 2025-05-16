@@ -83,6 +83,10 @@ public abstract class AbstractNamedValueMethodArgumentResolverImpl extends Abstr
             AbstractNamedValueMethodArgumentResolver.NamedValueInfo namedValueInfo,
             @Nullable Object arg
     ) throws Exception {
+        // Return arg but not null because arg can be tracked
+        if (arg == null)
+            return arg;
+
         List<Object> key = getPinnedKeyOfParameter(parameter);
         String name = (String)key.get(0);
         PinnedValueSource source = (PinnedValueSource)key.get(1);

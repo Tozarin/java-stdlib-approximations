@@ -24,6 +24,6 @@ public class RequestHeaderMapMethodArgumentResolverImpl {
         if (MultiValueMap.class.isAssignableFrom(paramType))
             return new RequestMultiValueMapImpl(PinnedValueSource.REQUEST_HEADER);
 
-        return new RequestMapImpl(PinnedValueSource.REQUEST_HEADER);
+        return new RequestMapImpl(PinnedValueSource.REQUEST_HEADER, false);
     }
 }
