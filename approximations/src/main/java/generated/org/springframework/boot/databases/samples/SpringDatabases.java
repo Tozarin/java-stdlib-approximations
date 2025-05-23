@@ -29,14 +29,18 @@ public class SpringDatabases {
                             new PositiveValidatorForInteger(),
                             new DigitsValidatorForNumber()
                     }
-            }
+            },
+            "_blank1",
+            true
     );
 
     public static BaseTableManager<SecondDataClass, Integer> _blank2 = new BaseTableManager<>(
             0,
             SecondDataClass.class,
             new Class<?>[0],
-            new ConstraintValidator<?, ?>[0][]
+            new ConstraintValidator<?, ?>[0][],
+            "_blank2",
+            true
     );
 
     public static NoIdTableManager _blankAdd = new NoIdTableManager(Integer.class, Integer.class);

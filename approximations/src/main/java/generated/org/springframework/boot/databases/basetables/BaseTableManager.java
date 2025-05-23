@@ -11,23 +11,39 @@ import java.util.function.Function;
 
 public class BaseTableManager<T, V> extends ABaseTable<V> implements ITableManager {
 
-    public BaseTable<V> base;
+    public BaseTableTrack<T, V> trackTable; // nullable
     public ABaseTable<V> tablesChain;
 
+    public String tableName;
     public Class<T> entityType;
 
     public BaseTableManager(
             int idIndex,
             Class<T> entityType,
             Class<?>[] columnTypes,
-            ConstraintValidator<?, ?>[][] validators
+            ConstraintValidator<?, ?>[][] validators,
+            String tableName,
+            boolean needTrack // true if SpringBootTests option set in WebBench
     ) {
-        BaseTable<V> base = new BaseTable<>(idIndex, columnTypes);
+        this.tableName = tableName;
 
-        this.base = base;
-        this.tablesChain = new BaseTableConstraintValidate<>(base, validators);
+        BaseTable<V> base = new BaseTable<>(idIndex, columnTypes);
+        BaseTableConstraintValidate<V> validated = new BaseTableConstraintValidate<>(base, validators);
+
+        if (needTrack) {
+            BaseTableTrack<T, V> track = new BaseTableTrack<>(validated, tableName);
+            this.trackTable = track;
+            this.tablesChain = track;
+        }
+        else {
+            this.tablesChain = validated;
+        }
 
         this.entityType = entityType;
+    }
+
+    public void setDeserializerTrackTable(Function<Object[] , T> deserializer) {
+        if (trackTable != null) trackTable.setDeserializer(deserializer);
     }
 
     @Override
@@ -101,10 +117,5 @@ public class BaseTableManager<T, V> extends ABaseTable<V> implements ITableManag
     @Override
     public void deleteAll() {
         tablesChain.deleteAll();
-    }
-
-    public ListWrapper<T> getAllEntities(Function<Object[], T> deserializer) {
-        MappedTable<Object[], T> entities = new MappedTable<>(base, deserializer, entityType);
-        return new ListWrapper<>(entities);
     }
 }
