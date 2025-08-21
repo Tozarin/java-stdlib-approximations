@@ -1335,6 +1335,8 @@ public final class LibSLRuntime {
         public void merge(Map.Container<K, V> container) {
             Engine.assume(container instanceof HashMapContainer);
             HashMapContainer<K, V> other = (HashMapContainer<K, V>) container;
+            Engine.assume(map != null);
+            Engine.assume(other.map != null);
             map.merge(other.map);
         }
 
@@ -1346,37 +1348,44 @@ public final class LibSLRuntime {
         @Override
         public Map.Container<K, V> duplicate() {
             final HashMapContainer<K, V> obj = new HashMapContainer<>();
+            Engine.assume(map != null);
             obj.map.merge(this.map);
             return obj;
         }
 
         @Override
         public boolean containsKey(K key) {
+            Engine.assume(map != null);
             return map.containsKey(key);
         }
 
         @Override
         public K anyKey() {
+            Engine.assume(map != null);
             return map.anyKey();
         }
 
         @Override
         public V get(K key) {
+            Engine.assume(map != null);
             return map.get(key);
         }
 
         @Override
         public void set(K key, V value) {
+            Engine.assume(map != null);
             map.set(key, value);
         }
 
         @Override
         public void remove(K key) {
+            Engine.assume(map != null);
             map.remove(key);
         }
 
         @Override
         public int size() {
+            Engine.assume(map != null);
             return map.size();
         }
     }
@@ -1394,6 +1403,8 @@ public final class LibSLRuntime {
         public void merge(Map.Container<K, V> container) {
             Engine.assume(container instanceof IdentityMapContainer);
             IdentityMapContainer<K, V> other = (IdentityMapContainer<K, V>) container;
+            Engine.assume(map != null);
+            Engine.assume(other.map != null);
             map.merge(other.map);
         }
 
@@ -1405,37 +1416,44 @@ public final class LibSLRuntime {
         @Override
         public Map.Container<K, V> duplicate() {
             final IdentityMapContainer<K, V> obj = new IdentityMapContainer<>();
+            Engine.assume(map != null);
             obj.map.merge(this.map);
             return obj;
         }
 
         @Override
         public boolean containsKey(K key) {
+            Engine.assume(map != null);
             return map.containsKey(key);
         }
 
         @Override
         public K anyKey() {
+            Engine.assume(map != null);
             return map.anyKey();
         }
 
         @Override
         public V get(K key) {
+            Engine.assume(map != null);
             return map.get(key);
         }
 
         @Override
         public void set(K key, V value) {
+            Engine.assume(map != null);
             map.set(key, value);
         }
 
         @Override
         public void remove(K key) {
+            Engine.assume(map != null);
             map.remove(key);
         }
 
         @Override
         public int size() {
+            Engine.assume(map != null);
             return map.size();
         }
     }
