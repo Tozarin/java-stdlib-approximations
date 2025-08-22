@@ -29,8 +29,8 @@ public class ThrowableImpl implements Serializable {
 
     public final synchronized void addSuppressed(java.lang.Throwable exception) { }
 
-    public synchronized java.lang.Throwable fillInStackTrace() {
-        return Engine.makeSymbolic(java.lang.Throwable.class);
+    public synchronized ThrowableImpl fillInStackTrace() {
+        return this;
     }
 
     public StackTraceElement[] getStackTrace() {
